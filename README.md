@@ -1,6 +1,6 @@
 # Encarta 2.0 (NewGen Retro Edition) 🏛️⚡
 
-> **Hackathon Edition** — Reimagining 1995's legendary **Microsoft Encarta** as an endlessly expanding 3D WebGL knowledge universe powered by **Gemma 4 31B**, **Gemini 2.5 Flash**, and retro Win95 cyber-aesthetics.
+> Reimagining 1995's legendary **Microsoft Encarta** as an endlessly expanding 3D WebGL knowledge universe powered by **Gemma 4 31B**, **Gemini 2.5 Flash**, and retro Win95 cyber-aesthetics.
 
 ---
 
