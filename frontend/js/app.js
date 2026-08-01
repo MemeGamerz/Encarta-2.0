@@ -4,7 +4,7 @@ import { spawnWikiWindow } from "./wiki_window.js";
 import { mindmaze, openMindMazeModal, closeMindMazeModal } from "./mindmaze.js";
 
 /**
- * Encarta 2.0 SPA Main Application Coordinator (Polish Edition)
+ * Encarta 2.0 SPA Main Application Coordinator (Dynamic Knowledge Expansion Edition)
  */
 
 let spatialGraph = null;
@@ -44,6 +44,7 @@ async function initApp() {
 
 /**
  * Fetch dynamic article payload from Python FastAPI backend `/api/article?topic=...`
+ * Automatically syncs & persists new nodes into SQLite and 3D globe network.
  */
 async function loadArticle(topicTitle) {
     soundEngine.playClick();
@@ -54,12 +55,22 @@ async function loadArticle(topicTitle) {
     const timelineEl = document.getElementById("reader-timeline");
     const triviaEl = document.getElementById("reader-trivia");
     const relatedEl = document.getElementById("reader-related");
+    
+    const isExistingNode = spatialGraph && spatialGraph.nodesData && spatialGraph.nodesData.some(n => 
+        n.title.toLowerCase() === topicTitle.toLowerCase() || 
+        n.id === topicTitle.toLowerCase().trim().replace(/\s+/g, "-")
+    );
+
+    if (!isExistingNode && loaderModal && loaderTitle) {
+        loaderTitle.textContent = `Generating Node: "${topicTitle}"...`;
+        loaderModal.classList.remove("hidden");
+    }
 
     if (panel) panel.classList.add("open");
 
     if (titleEl) titleEl.textContent = topicTitle;
     if (eraEl) eraEl.textContent = "Loading Archival Records...";
-    if (summaryEl) summaryEl.textContent = "Retrieving generative summary from Encarta 2.0 knowledge base...";
+    if (summaryEl) summaryEl.textContent = "Generating node structure via Gemma 4 31B (High Thinking)...";
 
     try {
         const res = await fetch(`/api/article?topic=${encodeURIComponent(topicTitle)}`);
@@ -67,6 +78,7 @@ async function loadArticle(topicTitle) {
 
         const data = await res.json();
         currentArticleData = data;
+
 
         // Render Article Details
         if (titleEl) titleEl.textContent = data.title;
@@ -112,9 +124,18 @@ async function loadArticle(topicTitle) {
         // Update MindMaze trivia questions pool with this topic's questions
         mindmaze.setQuestions(data.mindmaze_questions, data.title);
 
+        // Dynamically add/update node on 3D Globe network and calculate interconnect links!
+        if (spatialGraph) {
+            spatialGraph.addOrUpdateNode(data);
+        }
+
     } catch (err) {
         console.error("[Encarta 2.0 API Error]", err);
         if (summaryEl) summaryEl.textContent = "Unable to fetch article data. Please ensure backend server is running.";
+    } finally {
+        if (loaderModal) {
+            loaderModal.classList.add("hidden");
+        }
     }
 }
 
@@ -133,7 +154,6 @@ function setupHeaderControls() {
         const executeSearch = () => {
             const query = searchInput.value.trim();
             if (query) {
-                spatialGraph.focusTopicByTitle(query);
                 loadArticle(query);
             }
         };
@@ -184,6 +204,27 @@ function setupHeaderControls() {
             openMindMazeModal();
         };
     }
+
+    // Reset Database Button
+    const resetBtn = document.getElementById("reset-db-btn");
+    if (resetBtn) {
+        resetBtn.onclick = async () => {
+            if (!confirm("Are you sure you want to reset the Encarta database to initial seed nodes?")) return;
+            soundEngine.playClick();
+            try {
+                const res = await fetch("/api/nodes/reset", { method: "POST" });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (spatialGraph && data.nodes) {
+                        spatialGraph.setNodes(data.nodes);
+                    }
+                    loadArticle("Microsoft Encarta");
+                }
+            } catch (err) {
+                console.error("Failed to reset database:", err);
+            }
+        };
+    }
 }
 
 /**
@@ -203,8 +244,8 @@ function setupReaderPanelControls() {
 
     if (wikiBtn) {
         wikiBtn.onclick = () => {
-            const query = currentArticleData ? (currentArticleData.wiki_query || currentArticleData.title) : "Ancient_Rome";
-            spawnWikiWindow(query); // Spawns nested draggable window!
+            const query = currentArticleData ? (currentArticleData.wiki_query || currentArticleData.title) : "Microsoft Encarta";
+            spawnWikiWindow(query);
         };
     }
 

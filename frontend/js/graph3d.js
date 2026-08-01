@@ -1,7 +1,7 @@
 import { soundEngine } from "./audio.js";
 
 /**
- * WebGL 3D Globe & Spatial Knowledge Graph Controller (Enhanced Interconnected Cluster Edition)
+ * WebGL 3D Globe & Spatial Knowledge Graph Controller (Single Unified Graph Cluster Edition)
  */
 
 export class SpatialGraphController {
@@ -20,9 +20,9 @@ export class SpatialGraphController {
         const container = document.getElementById(this.containerId);
         if (!container) return;
 
-        // Fetch seed topics from backend API
+        // Fetch persistent knowledge nodes from backend SQLite database
         try {
-            const res = await fetch("/api/seed-topics");
+            const res = await fetch("/api/nodes");
             if (res.ok) {
                 const rawTopics = await res.json();
                 this.buildGraphData(rawTopics);
@@ -30,7 +30,7 @@ export class SpatialGraphController {
                 this.buildFallbackGraphData();
             }
         } catch (err) {
-            console.warn("[3D Graph Warning] API seed fetch error, using fallback data:", err);
+            console.warn("[3D Graph Warning] API nodes fetch error, using fallback data:", err);
             this.buildFallbackGraphData();
         }
 
@@ -52,47 +52,37 @@ export class SpatialGraphController {
 
         this.linksData = [];
 
-        // Explicit knowledge bridge connections connecting Silk Road & Asia to Europe & Tech cluster
+        // Explicit initial knowledge bridge connections (fixed baseline network)
         const explicitBridges = [
-            { source: "silk-road", target: "byzantine-empire", weight: 3, color: "rgba(255, 183, 3, 0.8)" },
-            { source: "silk-road", target: "ancient-persia", weight: 3, color: "rgba(255, 183, 3, 0.8)" },
-            { source: "byzantine-empire", target: "ancient-rome", weight: 3, color: "rgba(0, 168, 150, 0.8)" },
-            { source: "ancient-persia", target: "ancient-egypt", weight: 3, color: "rgba(0, 168, 150, 0.8)" },
-            { source: "silk-road", target: "age-of-discovery", weight: 3, color: "rgba(255, 183, 3, 0.8)" },
-            { source: "age-of-discovery", target: "renaissance-florence", weight: 3, color: "rgba(0, 168, 150, 0.8)" },
-            { source: "age-of-discovery", target: "industrial-revolution", weight: 3, color: "rgba(0, 168, 150, 0.8)" },
-            { source: "industrial-revolution", target: "silicon-valley", weight: 3, color: "rgba(0, 168, 150, 0.8)" },
-            { source: "silicon-valley", target: "microsoft-encarta", weight: 3, color: "rgba(0, 168, 150, 0.8)" },
-            { source: "silicon-valley", target: "quantum-physics", weight: 3, color: "rgba(56, 189, 248, 0.8)" },
-            { source: "quantum-physics", target: "space-exploration", weight: 3, color: "rgba(56, 189, 248, 0.8)" }
+            { source: "silk-road", target: "byzantine-empire", weight: 3 },
+            { source: "silk-road", target: "ancient-persia", weight: 3 },
+            { source: "byzantine-empire", target: "ancient-rome", weight: 3 },
+            { source: "ancient-persia", target: "ancient-egypt", weight: 3 },
+            { source: "silk-road", target: "age-of-discovery", weight: 3 },
+            { source: "age-of-discovery", target: "renaissance-florence", weight: 3 },
+            { source: "age-of-discovery", target: "industrial-revolution", weight: 3 },
+            { source: "industrial-revolution", target: "silicon-valley", weight: 3 },
+            { source: "silicon-valley", target: "microsoft-encarta", weight: 3 },
+            { source: "silicon-valley", target: "quantum-physics", weight: 3 },
+            { source: "quantum-physics", target: "space-exploration", weight: 3 }
         ];
 
         explicitBridges.forEach(link => {
-            if (this.nodesData.some(n => n.id === link.source) && this.nodesData.some(n => n.id === link.target)) {
-                this.linksData.push(link);
+            const n1 = this.nodesData.find(n => n.id === link.source);
+            const n2 = this.nodesData.find(n => n.id === link.target);
+            if (n1 && n2) {
+                const wireColor = this.getLinkColor(n1, n2);
+                this.linksData.push({
+                    source: link.source,
+                    target: link.target,
+                    weight: link.weight,
+                    color: wireColor
+                });
             }
         });
 
-        // Add category-shared secondary connections
-        for (let i = 0; i < this.nodesData.length; i++) {
-            for (let j = i + 1; j < this.nodesData.length; j++) {
-                const n1 = this.nodesData[i];
-                const n2 = this.nodesData[j];
-                
-                const exists = this.linksData.some(l => 
-                    (l.source === n1.id && l.target === n2.id) || (l.source === n2.id && l.target === n1.id)
-                );
-
-                if (!exists && n1.category === n2.category) {
-                    this.linksData.push({
-                        source: n1.id,
-                        target: n2.id,
-                        weight: 1.5,
-                        color: "rgba(0, 168, 150, 0.4)"
-                    });
-                }
-            }
-        }
+        // Ensure 100% single unified cluster connectivity (ZERO isolated islands or sub-clusters)
+        this.ensureSingleUnifiedCluster();
     }
 
     buildFallbackGraphData() {
@@ -108,6 +98,73 @@ export class SpatialGraphController {
         ]);
     }
 
+    /**
+     * BFS Graph Connectivity Algorithm:
+     * Guarantees that EVERY node and sub-cluster in the 3D WebGL universe belongs to
+     * ONE single unified connected component rooted at 'microsoft-encarta'.
+     * Eliminates isolated islands, pairs, and floating sub-clusters permanently.
+     */
+    ensureSingleUnifiedCluster() {
+        if (!this.nodesData || this.nodesData.length <= 1) return;
+
+        const mainRootId = "microsoft-encarta";
+        const rootNode = this.nodesData.find(n => n.id === mainRootId) || this.nodesData[0];
+        const rootId = rootNode.id;
+
+        // BFS to find all node IDs reachable from rootId
+        let visited = this.getReachableNodes(rootId);
+
+        // Keep connecting isolated islands until all nodes belong to the main cluster
+        let unvisitedNodes = this.nodesData.filter(n => !visited.has(n.id));
+
+        while (unvisitedNodes.length > 0) {
+            const islandNode = unvisitedNodes[0];
+
+            // Find a target node in the main cluster (prefer matching category if possible)
+            const targetInMainCluster = this.nodesData.find(n => visited.has(n.id) && n.category === islandNode.category) ||
+                                        this.nodesData.find(n => visited.has(n.id)) ||
+                                        rootNode;
+
+            if (targetInMainCluster && targetInMainCluster.id !== islandNode.id) {
+                this.linksData.push({
+                    source: islandNode.id,
+                    target: targetInMainCluster.id,
+                    weight: 2,
+                    color: this.getLinkColor(islandNode, targetInMainCluster)
+                });
+            }
+
+            // Re-run BFS to update visited set with the newly bridged sub-cluster
+            visited = this.getReachableNodes(rootId);
+            unvisitedNodes = this.nodesData.filter(n => !visited.has(n.id));
+        }
+    }
+
+    /**
+     * Traverses links using BFS to find all node IDs connected to rootId
+     */
+    getReachableNodes(rootId) {
+        const visited = new Set([rootId]);
+        const queue = [rootId];
+
+        while (queue.length > 0) {
+            const curr = queue.shift();
+            this.linksData.forEach(l => {
+                const sId = typeof l.source === 'object' ? (l.source.id || l.source) : l.source;
+                const tId = typeof l.target === 'object' ? (l.target.id || l.target) : l.target;
+
+                if (sId === curr && !visited.has(tId)) {
+                    visited.add(tId);
+                    queue.push(tId);
+                } else if (tId === curr && !visited.has(sId)) {
+                    visited.add(sId);
+                    queue.push(sId);
+                }
+            });
+        }
+        return visited;
+    }
+
     getCategoryColor(cat) {
         switch (cat) {
             case "History": return "#FFB703"; // Gold
@@ -119,6 +176,15 @@ export class SpatialGraphController {
         }
     }
 
+    getLinkColor(n1, n2) {
+        if (n1.category === "Technology" && n2.category === "Technology") return "#00A896";
+        if (n1.category === "History" && n2.category === "History") return "#FFB703";
+        if (n1.category === "Science" && n2.category === "Science") return "#38BDF8";
+        if (n1.category === "Art & Culture" && n2.category === "Art & Culture") return "#F43F5E";
+        if (n1.category === "Trade & Exploration" && n2.category === "Trade & Exploration") return "#A855F7";
+        return n1.color || "#00A896";
+    }
+
     getCategoryIcon(cat) {
         switch (cat) {
             case "History": return "🏛️";
@@ -126,12 +192,12 @@ export class SpatialGraphController {
             case "Technology": return "💻";
             case "Art & Culture": return "🎨";
             case "Trade & Exploration": return "🧭";
-            default: return "🌍";
+            default: return "📌";
         }
     }
 
     /**
-     * Render custom 3D Sprite texture with unclipped radial soft glow aura for active node
+     * Render custom 3D Sprite texture with 100% transparent background (NO black box)
      */
     createNodeSprite(node) {
         if (!window.THREE) return null;
@@ -143,35 +209,37 @@ export class SpatialGraphController {
         canvas.height = 256;
         const ctx = canvas.getContext("2d");
 
+        ctx.clearRect(0, 0, 256, 256);
+
         const cx = 128;
         const cy = 100;
 
         // Active Node Soft Radial Glow Aura
         if (isSelected) {
-            const glowGrad = ctx.createRadialGradient(cx, cy, 35, cx, cy, 68);
+            const glowGrad = ctx.createRadialGradient(cx, cy, 32, cx, cy, 65);
             glowGrad.addColorStop(0, "rgba(255, 183, 3, 0.8)");
-            glowGrad.addColorStop(0.6, "rgba(0, 168, 150, 0.4)");
-            glowGrad.addColorStop(1, "rgba(0, 168, 150, 0)");
+            glowGrad.addColorStop(0.5, "rgba(0, 168, 150, 0.4)");
+            glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
 
             ctx.fillStyle = glowGrad;
             ctx.beginPath();
-            ctx.arc(cx, cy, 68, 0, Math.PI * 2);
+            ctx.arc(cx, cy, 65, 0, Math.PI * 2);
             ctx.fill();
         }
 
         // Inner Circle Badge
-        ctx.fillStyle = isSelected ? "rgba(2, 6, 23, 0.95)" : "rgba(15, 23, 42, 0.9)";
+        ctx.fillStyle = isSelected ? "rgba(2, 6, 23, 0.95)" : "rgba(15, 23, 42, 0.88)";
         ctx.beginPath();
-        ctx.arc(cx, cy, 38, 0, Math.PI * 2);
+        ctx.arc(cx, cy, 36, 0, Math.PI * 2);
         ctx.fill();
 
         // Outer Ring Border
         ctx.strokeStyle = isSelected ? "#FFB703" : node.color;
-        ctx.lineWidth = isSelected ? 5 : 3.5;
+        ctx.lineWidth = isSelected ? 4.5 : 3;
         ctx.stroke();
 
         // Category Emoji Icon
-        ctx.font = "34px sans-serif";
+        ctx.font = "32px sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(node.icon, cx, cy);
@@ -179,16 +247,34 @@ export class SpatialGraphController {
         // Title Label
         ctx.fillStyle = isSelected ? "#FFB703" : "#F8F9FA";
         ctx.font = isSelected ? "bold 18px 'Share Tech Mono', monospace" : "bold 15px 'Share Tech Mono', monospace";
-        ctx.fillText(node.title, cx, 185);
+        ctx.fillText(node.title, cx, 180);
 
         const texture = new THREE.CanvasTexture(canvas);
-        const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+        
+        const material = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false,
+            alphaTest: 0.01
+        });
         const sprite = new THREE.Sprite(material);
 
-        const spriteScale = isSelected ? 34 : 26;
+        const spriteScale = isSelected ? 32 : 25;
         sprite.scale.set(spriteScale, spriteScale, 1);
 
         return sprite;
+    }
+
+    /**
+     * Sanitize link IDs to prevent 3d-force-graph internal object mutation crash
+     */
+    cleanLinks() {
+        return this.linksData.map(l => ({
+            source: typeof l.source === 'object' ? (l.source.id || l.source) : l.source,
+            target: typeof l.target === 'object' ? (l.target.id || l.target) : l.target,
+            weight: l.weight || 1,
+            color: l.color || "#00A896"
+        }));
     }
 
     renderGraph() {
@@ -196,7 +282,7 @@ export class SpatialGraphController {
         if (!window.ForceGraph3D) return;
 
         this.graph = window.ForceGraph3D()(container)
-            .graphData({ nodes: this.nodesData, links: this.linksData })
+            .graphData({ nodes: this.nodesData, links: this.cleanLinks() })
             .nodeId("id")
             .nodeThreeObject(node => this.createNodeSprite(node))
             .nodeLabel(node => `
@@ -206,15 +292,39 @@ export class SpatialGraphController {
                     <div style="color: #F8F9FA; font-size: 11px; margin-top: 4px;">${node.summary_short}</div>
                 </div>
             `)
-            .linkCurvature(0.25)
-            .linkColor(link => link.color)
-            .linkWidth(link => (link.weight || 1) * 1.2)
+            .linkDirectionalParticles(0)
+            .linkThreeObject(link => {
+                const color = link.color || "#00A896";
+                const lineMat = new THREE.LineDashedMaterial({
+                    color: new THREE.Color(color),
+                    dashSize: 10,
+                    gapSize: 14,
+                    linewidth: 2,
+                    transparent: true,
+                    opacity: 0.85
+                });
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+                const line = new THREE.Line(geometry, lineMat);
+                return line;
+            })
+            .linkPositionUpdate((line, { start, end }) => {
+                const positions = line.geometry.attributes.position.array;
+                positions[0] = start.x;
+                positions[1] = start.y;
+                positions[2] = start.z;
+                positions[3] = end.x;
+                positions[4] = end.y;
+                positions[5] = end.z;
 
-            // Flowing Particle Stream Edges
-            .linkDirectionalParticles(link => (link.weight || 1) * 2)
-            .linkDirectionalParticleSpeed(0.006)
-            .linkDirectionalParticleWidth(2.5)
-            .linkDirectionalParticleColor(() => "#FFB703")
+                line.geometry.attributes.position.needsUpdate = true;
+                line.geometry.computeBoundingSphere();
+                
+                if (line.material) {
+                    line.material.dashOffset -= 0.15;
+                }
+                return true;
+            })
 
             .onNodeClick(node => {
                 soundEngine.playNodeFocus();
@@ -258,39 +368,99 @@ export class SpatialGraphController {
         );
     }
 
-    focusTopicByTitle(title) {
-        let target = this.nodesData.find(n => n.title.toLowerCase() === title.toLowerCase());
-        if (!target) {
-            target = {
-                id: title.toLowerCase().replace(/\s+/g, "-"),
-                title: title,
-                category: "Knowledge Node",
-                era: "Historical Epoch",
-                lat: 20.0 + (hashString(title) % 50),
-                lng: (hashString(title * 2) % 360) - 180,
-                summary_short: `Newly added node: ${title}`,
-                color: "#FFB703",
-                icon: "📌"
-            };
-            this.nodesData.push(target);
-            
-            if (this.nodesData.length > 1) {
-                this.linksData.push({
-                    source: target.id,
-                    target: this.nodesData[0].id,
-                    weight: 2,
-                    color: "#FFB703"
-                });
-            }
+    /**
+     * Replace active graph dataset with reset raw topics from DB
+     */
+    setNodes(rawTopics) {
+        if (!rawTopics || !Array.isArray(rawTopics)) return;
+        this.buildGraphData(rawTopics);
+        if (this.graph) {
+            this.graph.graphData({
+                nodes: this.nodesData,
+                links: this.cleanLinks()
+            });
+        }
+    }
 
-            if (this.graph) {
-                this.graph.graphData({ nodes: this.nodesData, links: this.linksData });
+    /**
+     * Dynamically add or update a knowledge node.
+     * ZERO isolated sub-clusters allowed! Connects new nodes and unifies all components into 1 cluster.
+     */
+    addOrUpdateNode(article) {
+        if (!article || !article.title) return;
+        const title = article.title.trim();
+        const nodeId = title.toLowerCase().replace(/\s+/g, "-");
+        const category = article.category || "Knowledge Node";
+        const coords = article.coordinates || {};
+        const lat = coords.lat !== undefined ? coords.lat : (20.0 + (hashString(title) % 50));
+        const lng = coords.lng !== undefined ? coords.lng : ((hashString(title * 2) % 360) - 180);
+        const summary = article.summary || "";
+        const summary_short = summary.length > 110 ? (summary.substring(0, 110) + "...") : summary;
+
+        let node = this.nodesData.find(n => n.id === nodeId || n.title.toLowerCase() === title.toLowerCase());
+        
+        if (node) {
+            // Node ALREADY exists! Unify cluster and focus
+            this.ensureSingleUnifiedCluster();
+            this.focusNode(node);
+            return;
+        }
+
+        // Create BRAND NEW Node
+        node = {
+            id: nodeId,
+            title: title,
+            category: category,
+            era: article.era || "Historical Epoch",
+            lat: lat,
+            lng: lng,
+            summary_short: summary_short,
+            color: this.getCategoryColor(category),
+            icon: this.getCategoryIcon(category)
+        };
+        this.nodesData.push(node);
+
+        // Add 1 primary connection wire for the new node
+        let connected = false;
+        if (article.related_topics && Array.isArray(article.related_topics)) {
+            for (const relTitle of article.related_topics) {
+                const relNode = this.nodesData.find(n => n.title.toLowerCase() === relTitle.toLowerCase());
+                if (relNode && relNode.id !== node.id) {
+                    this.linksData.push({
+                        source: node.id,
+                        target: relNode.id,
+                        weight: 2,
+                        color: this.getLinkColor(node, relNode)
+                    });
+                    connected = true;
+                    break;
+                }
             }
         }
 
-        this.focusNode(target);
-        if (this.onNodeSelect) {
-            this.onNodeSelect(target.title);
+        // Run BFS Single Unified Cluster check to bridge any isolated sub-clusters to main root
+        this.ensureSingleUnifiedCluster();
+
+        // Refresh 3D Graph dataset
+        if (this.graph) {
+            this.graph.graphData({ nodes: this.nodesData, links: this.cleanLinks() });
+        }
+
+        this.focusNode(node);
+    }
+
+    focusTopicByTitle(title) {
+        let target = this.nodesData.find(n => n.title.toLowerCase() === title.toLowerCase());
+        if (target) {
+            this.focusNode(target);
+            if (this.onNodeSelect) {
+                this.onNodeSelect(target.title);
+            }
+        } else {
+            // Trigger article load which will dynamically add the node
+            if (this.onNodeSelect) {
+                this.onNodeSelect(title);
+            }
         }
     }
 
@@ -300,12 +470,14 @@ export class SpatialGraphController {
             ? this.nodesData
             : this.nodesData.filter(n => n.category === category);
 
+        const cleanLinksList = this.cleanLinks();
+
         if (this.graph) {
             this.graph.graphData({
                 nodes: filteredNodes,
-                links: this.linksData.filter(l =>
-                    filteredNodes.some(n => n.id === (l.source.id || l.source)) &&
-                    filteredNodes.some(n => n.id === (l.target.id || l.target))
+                links: cleanLinksList.filter(l =>
+                    filteredNodes.some(n => n.id === l.source) &&
+                    filteredNodes.some(n => n.id === l.target)
                 )
             });
         }

@@ -64,6 +64,9 @@
             <button id="open-mindmaze-btn" class="retro-btn retro-btn-accent">
                 🏰 MindMaze
             </button>
+            <button id="reset-db-btn" class="retro-btn text-xs ml-1" title="Reset Database to Seed Nodes">
+                🔄 Reset DB
+            </button>
             <button id="sound-toggle-btn" class="retro-btn">
                 🔊 Mute/Unmute
             </button>
@@ -129,6 +132,30 @@
             </div>
         </div>
     </aside>
+
+    <!-- Generating Node Retro Floating Status Modal -->
+    <div id="node-loader-modal" class="node-loader-overlay hidden">
+        <div class="retro-window win95-outset node-loader-window">
+            <div class="retro-window-titlebar">
+                <div class="retro-window-title">
+                    <span>⚡</span>
+                    <span id="loader-topic-title">Generating Knowledge Node...</span>
+                </div>
+            </div>
+            <div class="panel-body text-center p-4">
+                <div class="loader-pulse-icon">🧠</div>
+                <div id="loader-status-text" class="text-amber-400 font-mono text-xs font-bold my-2">
+                    GENERATING NODE VIA GEMMA 4 31B (HIGH THINKING)...
+                </div>
+                <div class="text-slate-300 text-xs font-mono mb-3">
+                    Structuring coordinates, category, milestones & wiring light-beam connections...
+                </div>
+                <div class="loader-progress-bar win95-inset">
+                    <div class="loader-progress-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- MindMaze Trivia Dungeon Game Window (Component D Modal) -->
     <div id="mindmaze-modal" class="retro-window win95-outset glass-panel hidden">

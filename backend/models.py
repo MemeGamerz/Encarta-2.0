@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -14,7 +14,7 @@ class Milestone(BaseModel):
 
 class MindMazeQuestion(BaseModel):
     question: str = Field(..., description="Trivia question text")
-    options: List[str] = Field(..., description="Four multiple choice options")
+    options: List[str] = Field(..., description="Multiple choice options")
     correct_index: int = Field(..., description="0-based index of the correct option")
     hint: str = Field(..., description="Helpful hint if the player guesses incorrectly")
 
@@ -22,16 +22,27 @@ class MindMazeQuestion(BaseModel):
 class ArticleResponse(BaseModel):
     title: str = Field(..., description="Title of the topic/article")
     era: str = Field(..., description="Era, century, or time period stamp")
+    category: Optional[str] = Field(default="Knowledge Node", description="Topic category")
     wiki_query: str = Field(..., description="Query parameter string for Wikipedia REST API")
     coordinates: Coordinates = Field(..., description="Geographical coordinates for 3D Globe alignment")
     summary: str = Field(..., description="Generative high-level summary")
     milestones: List[Milestone] = Field(..., description="Horizontal timeline milestones")
     trivia: str = Field(..., description="Interactive 'Did You Know?' trivia fact")
-    mindmaze_questions: List[MindMazeQuestion] = Field(..., description="List of 3-5 MindMaze dungeon trivia questions")
+    mindmaze_questions: List[MindMazeQuestion] = Field(..., description="List of MindMaze dungeon trivia questions")
     related_topics: List[str] = Field(..., description="List of related node topic titles")
 
 
 class SeedTopic(BaseModel):
+    id: str
+    title: str
+    category: str
+    era: str
+    lat: float
+    lng: float
+    summary_short: str
+
+
+class KnowledgeNode(BaseModel):
     id: str
     title: str
     category: str

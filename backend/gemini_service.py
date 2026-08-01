@@ -1,9 +1,10 @@
 import os
+import re
 import json
 import sqlite3
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 from dotenv import load_dotenv
-from backend.models import ArticleResponse
+from backend.models import ArticleResponse, SeedTopic
 
 # Load environment variables
 load_dotenv()
@@ -16,10 +17,15 @@ else:
     DB_PATH = "/tmp/encarta_cache.db"
 
 
-def init_db():
-    """Initialize the SQLite cache table if it does not exist."""
+def init_db(force_reset: bool = False):
+    """Initialize or reset the SQLite cache and knowledge_nodes table."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
+    if force_reset:
+        cursor.execute("DROP TABLE IF EXISTS article_cache")
+        cursor.execute("DROP TABLE IF EXISTS knowledge_nodes")
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS article_cache (
             topic TEXT PRIMARY KEY,
@@ -27,12 +33,62 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS knowledge_nodes (
+            id TEXT PRIMARY KEY,
+            title TEXT UNIQUE NOT NULL,
+            category TEXT NOT NULL,
+            era TEXT NOT NULL,
+            lat REAL NOT NULL,
+            lng REAL NOT NULL,
+            summary_short TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
+    conn.close()
+
+    # Populate clean initial seed topics
+    seed_initial_nodes_into_db(force_reset)
+
+
+def seed_initial_nodes_into_db(force_reset: bool = False):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    if force_reset:
+        cursor.execute("DELETE FROM knowledge_nodes")
+        cursor.execute("DELETE FROM article_cache")
+        conn.commit()
+
+    cursor.execute("SELECT COUNT(*) FROM knowledge_nodes")
+    count = cursor.fetchone()[0]
+    
+    if count == 0:
+        initial_seeds = [
+            ("microsoft-encarta", "Microsoft Encarta", "Technology", "1993 – 2009", 47.6405, -122.1297, "The legendary 90s CD-ROM multimedia digital encyclopedia pioneer."),
+            ("ancient-rome", "Ancient Rome", "History", "753 BCE – 476 CE", 41.9028, 12.4964, "The colossal empire that pioneered Roman law, roads, and aqueducts."),
+            ("byzantine-empire", "Byzantine Empire", "History", "330 CE – 1453 CE", 41.0082, 28.9784, "Constantinople crossroads connecting Western Europe and Silk Road trade."),
+            ("silk-road", "The Silk Road", "Trade & Exploration", "130 BCE – 1453 CE", 34.3416, 108.9398, "Ancient transcontinental trade network connecting Asia, Persia, and Europe."),
+            ("ancient-persia", "Ancient Persia", "History", "550 BCE – 330 BCE", 29.9352, 52.8906, "Persepolis empire linking Silk Road, Mesopotamia, and Mediterranean."),
+            ("age-of-discovery", "Age of Discovery", "Trade & Exploration", "1400 – 1700", 38.7223, -9.1393, "Global maritime exploration linking Silk Road routes to the Americas."),
+            ("silicon-valley", "Silicon Valley", "Technology", "1939 – Present", 37.3875, -122.0575, "Global epicenter of microchip innovation, personal computing, and AI."),
+            ("quantum-physics", "Quantum Physics", "Science", "1900 – Present", 52.5200, 13.4050, "The subatomic physics revolution of wave-particle duality and entanglement."),
+            ("renaissance-florence", "Renaissance Florence", "Art & Culture", "1300 – 1600", 43.7696, 11.2558, "Cradle of humanism, perspective painting, and Medici patronage."),
+            ("industrial-revolution", "Industrial Revolution", "Technology", "1760 – 1840", 53.4808, -2.2426, "Mechanization, steam locomotives, and urban factory transformation."),
+            ("ancient-egypt", "Ancient Egypt", "History", "3100 BCE – 30 BCE", 29.9792, 31.1342, "Pyramids of Giza, hieroglyphics, and Pharaohs along the Nile."),
+            ("space-exploration", "Space Exploration", "Science", "1957 – Present", 28.5721, -80.6480, "Sputnik, Apollo Moon landings, Mars rovers, and cosmic telescopes.")
+        ]
+        cursor.executemany("""
+            INSERT OR IGNORE INTO knowledge_nodes (id, title, category, era, lat, lng, summary_short)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, initial_seeds)
+        conn.commit()
     conn.close()
 
 
 # Ensure DB table exists on module load
-init_db()
+init_db(force_reset=False)
 
 
 def get_cached_article(topic: str) -> Optional[Dict[str, Any]]:
@@ -52,22 +108,65 @@ def get_cached_article(topic: str) -> Optional[Dict[str, Any]]:
 
 
 def save_cached_article(topic: str, article_dict: Dict[str, Any]):
-    """Save article JSON dictionary to SQLite cache using parameterized inputs."""
+    """Save article JSON dictionary and persist node into SQLite database."""
     normalized_key = topic.strip().lower()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+    
     cursor.execute(
         "INSERT OR REPLACE INTO article_cache (topic, data) VALUES (?, ?)",
         (normalized_key, json.dumps(article_dict))
     )
+
+    try:
+        title = article_dict.get("title", topic.strip().title())
+        node_id = re.sub(r'\s+', '-', title.strip().lower())
+        category = article_dict.get("category", "Knowledge Node")
+        era = article_dict.get("era", "Historical Epoch")
+        coords = article_dict.get("coordinates", {})
+        lat = float(coords.get("lat", 20.0 + (hash(title) % 50)))
+        lng = float(coords.get("lng", (hash(title * 2) % 360) - 180))
+        summary = article_dict.get("summary", "")
+        summary_short = summary[:110] + "..." if len(summary) > 110 else summary
+
+        cursor.execute("""
+            INSERT OR REPLACE INTO knowledge_nodes (id, title, category, era, lat, lng, summary_short)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (node_id, title, category, era, lat, lng, summary_short))
+    except Exception as err:
+        print(f"[SQLite Node Persistence Warning] {err}")
+
     conn.commit()
     conn.close()
+
+
+def get_all_nodes() -> List[Dict[str, Any]]:
+    """Fetch all persistent knowledge nodes from SQLite DB."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, title, category, era, lat, lng, summary_short FROM knowledge_nodes ORDER BY created_at ASC")
+    rows = cursor.fetchall()
+    conn.close()
+
+    nodes = []
+    for r in rows:
+        nodes.append({
+            "id": r[0],
+            "title": r[1],
+            "category": r[2],
+            "era": r[3],
+            "lat": r[4],
+            "lng": r[5],
+            "summary_short": r[6]
+        })
+    return nodes
 
 
 # Comprehensive Pre-baked Seed Topics Fixtures
 PREBAKED_FIXTURES: Dict[str, Dict[str, Any]] = {
     "microsoft encarta": {
         "title": "Microsoft Encarta",
+        "category": "Technology",
         "era": "1993 – 2009",
         "wiki_query": "Encarta",
         "coordinates": {"lat": 47.6405, "lng": -122.1297},
@@ -92,18 +191,13 @@ PREBAKED_FIXTURES: Dict[str, Dict[str, Any]] = {
                 "options": ["MindMaze", "Math Blaster", "Where in the World is Carmen Sandiego?", "Oregon Trail"],
                 "correct_index": 0,
                 "hint": "Players guided a knight through castle doors by answering encyclopedia trivia."
-            },
-            {
-                "question": "True or False: Encarta 2.0 combines 90s Encarta nostalgia with modern 3D WebGL globes and Gemini AI.",
-                "options": ["True", "False"],
-                "correct_index": 0,
-                "hint": "Encarta 2.0 brings back the retro design system with modern WebGL."
             }
         ],
         "related_topics": ["Silicon Valley", "Ancient Rome", "Quantum Physics", "Renaissance Florence"]
     },
     "the silk road": {
         "title": "The Silk Road",
+        "category": "Trade & Exploration",
         "era": "130 BCE – 1453 CE",
         "wiki_query": "Silk_Road",
         "coordinates": {"lat": 34.3416, "lng": 108.9398},
@@ -121,28 +215,22 @@ PREBAKED_FIXTURES: Dict[str, Dict[str, Any]] = {
                 "options": ["Han Dynasty", "Ming Dynasty", "Tang Dynasty", "Qing Dynasty"],
                 "correct_index": 0,
                 "hint": "Opened following imperial envoy Zhang Qian's western missions."
-            },
-            {
-                "question": "What famous Venetian explorer traveled the Silk Road to China in 1271?",
-                "options": ["Marco Polo", "Christopher Columbus", "Vasco da Gama", "Ferdinand Magellan"],
-                "correct_index": 0,
-                "hint": "He documented his travels in 'The Travels of Marco Polo'."
             }
         ],
         "related_topics": ["Byzantine Empire", "Ancient Persia", "Age of Discovery", "Ancient Rome"]
     },
     "byzantine empire": {
         "title": "Byzantine Empire",
+        "category": "History",
         "era": "330 CE – 1453 CE",
         "wiki_query": "Byzantine_Empire",
         "coordinates": {"lat": 41.0082, "lng": 28.9784},
         "summary": "The Byzantine Empire was the continuation of the Roman Empire in its eastern provinces during Late Antiquity and the Middle Ages. Centered at Constantinople (modern Istanbul), it served as the crucial bridge connecting European civilization to the Silk Road trade network.",
         "milestones": [
             {"year": "330 CE", "event": "Constantine the Great dedicates Constantinople as the new capital of the Roman Empire."},
-            {"year": "537 CE", "event": "Emperor Justinian I completes the Hagia Sophia cathedral."},
-            {"year": "1453 CE", "event": "Fall of Constantinople to the Ottoman Empire under Sultan Mehmed II."}
+            {"year": "537 CE", "event": "Emperor Justinian I completes the Hagia Sophia cathedral."}
         ],
-        "trivia": "Constantinople's massive triple-layered Theodosian Walls repelled invasions for over 1,000 years until defeated by gunpowder cannons in 1453!",
+        "trivia": "Constantinople's massive triple-layered Theodosian Walls repelled invasions for over 1,000 years!",
         "mindmaze_questions": [
             {
                 "question": "What imperial capital city served as the heart of the Byzantine Empire?",
@@ -155,15 +243,15 @@ PREBAKED_FIXTURES: Dict[str, Dict[str, Any]] = {
     },
     "ancient persia": {
         "title": "Ancient Persia",
+        "category": "History",
         "era": "550 BCE – 330 BCE",
         "wiki_query": "Achaemenid_Empire",
         "coordinates": {"lat": 29.9352, "lng": 52.8906},
         "summary": "Ancient Persia under the Achaemenid Empire was the first global superpower, spanning from Egypt and Greece to India. With monumental capitals like Persepolis and the 2,500 km Royal Road, Persia established the foundational trade infrastructure later absorbed into the Silk Road.",
         "milestones": [
-            {"year": "550 BCE", "event": "Cyrus the Great founds the Achaemenid Persian Empire."},
-            {"year": "515 BCE", "event": "Darius the Great constructs the Royal Road courier network."}
+            {"year": "550 BCE", "event": "Cyrus the Great founds the Achaemenid Persian Empire."}
         ],
-        "trivia": "Darius the Great established the Chapar Khaneh, the world's first organized postal system using relay stations and fresh horses across the Royal Road!",
+        "trivia": "Darius the Great established the Chapar Khaneh, the world's first organized postal system using relay stations across the Royal Road!",
         "mindmaze_questions": [
             {
                 "question": "Which Persian king founded the Achaemenid Empire in 550 BCE?",
@@ -176,15 +264,15 @@ PREBAKED_FIXTURES: Dict[str, Dict[str, Any]] = {
     },
     "age of discovery": {
         "title": "Age of Discovery",
+        "category": "Trade & Exploration",
         "era": "1400 – 1700",
         "wiki_query": "Age_of_Discovery",
         "coordinates": {"lat": 38.7223, "lng": -9.1393},
         "summary": "The Age of Discovery was a period of extensive European overseas exploration that bridged the medieval Silk Road to global maritime trade. Driven by naval advancements, explorers established direct ocean trade routes connecting Europe, Asia, Africa, and the Americas.",
         "milestones": [
-            {"year": "1498", "event": "Vasco da Gama sails around Africa to reach India, establishing maritime Silk Road access."},
-            {"year": "1519", "event": "Magellan expedition completes the first circumnavigation of the globe."}
+            {"year": "1498", "event": "Vasco da Gama sails around Africa to reach India, establishing maritime Silk Road access."}
         ],
-        "trivia": "Navigational instruments like the astrolabe and magnetic compass were brought to Western Europe via Silk Road exchanges before enabling transoceanic voyages!",
+        "trivia": "Navigational instruments like the astrolabe and magnetic compass were brought to Western Europe via Silk Road exchanges!",
         "mindmaze_questions": [
             {
                 "question": "Which Portuguese navigator pioneered the direct ocean route from Europe to India in 1498?",
@@ -197,6 +285,7 @@ PREBAKED_FIXTURES: Dict[str, Dict[str, Any]] = {
     },
     "ancient rome": {
         "title": "Ancient Rome",
+        "category": "History",
         "era": "753 BCE – 476 CE",
         "wiki_query": "Ancient_Rome",
         "coordinates": {"lat": 41.9028, "lng": 12.4964},
@@ -205,103 +294,76 @@ PREBAKED_FIXTURES: Dict[str, Dict[str, Any]] = {
             {"year": "753 BCE", "event": "Legendary founding of Rome by Romulus and Remus."},
             {"year": "509 BCE", "event": "Establishment of the Roman Republic after overthrowing the monarchy."},
             {"year": "27 BCE", "event": "Augustus becomes the first Roman Emperor, founding the Principate."},
-            {"year": "80 CE", "event": "Completion of the Colosseum under Emperor Titus."},
-            {"year": "476 CE", "event": "Fall of the Western Roman Empire following the deposition of Romulus Augustulus."}
+            {"year": "80 CE", "event": "Completion of the Colosseum under Emperor Titus."}
         ],
-        "trivia": "The Romans used a mixture of volcanic ash, lime, and seawater to create pozzolana concrete that could harden even underwater, allowing structures like the Pantheon dome to endure over 2,000 years!",
+        "trivia": "The Romans used volcanic ash and seawater to create pozzolana concrete that could harden underwater!",
         "mindmaze_questions": [
             {
                 "question": "Which legendary twin brothers were credited with founding the city of Rome in 753 BCE?",
                 "options": ["Romulus and Remus", "Castor and Pollux", "Achilles and Hector", "Caesar and Pompey"],
                 "correct_index": 0,
                 "hint": "They were famously raised by a she-wolf (Lupa)."
-            },
-            {
-                "question": "True or False: The Colosseum was built primarily for naval sea battle reenactments and gladiator contests.",
-                "options": ["True", "False"],
-                "correct_index": 0,
-                "hint": "It could be flooded with water for mock naval battles!"
-            },
-            {
-                "question": "Decipher the Clue: First Emperor of Rome, adopted son of Julius Caesar, formerly named Octavian.",
-                "options": ["Emperor Augustus", "Nero", "Tiberius", "Caligula"],
-                "correct_index": 0,
-                "hint": "Augustus Caesar ushered in the Pax Romana."
             }
         ],
         "related_topics": ["Renaissance Florence", "Industrial Revolution", "The Silk Road", "Ancient Egypt"]
     },
     "silicon valley": {
         "title": "Silicon Valley",
+        "category": "Technology",
         "era": "1939 – Present",
         "wiki_query": "Silicon_Valley",
         "coordinates": {"lat": 37.3875, "lng": -122.0575},
         "summary": "Silicon Valley, located in the southern San Francisco Bay Area, is the global epicenter for technology, venture capital, and digital innovation. Named after the silicon semiconductor chip manufacturers of the mid-20th century, it gave birth to personal computing, the internet economy, and artificial intelligence.",
         "milestones": [
             {"year": "1939", "event": "Bill Hewlett and Dave Packard found HP in a Palo Alto garage."},
-            {"year": "1956", "event": "William Shockley establishes Shockley Semiconductor Laboratory in Mountain View."},
             {"year": "1976", "event": "Steve Jobs and Steve Wozniak unveil Apple I at the Homebrew Computer Club."},
-            {"year": "1998", "event": "Larry Page and Sergey Brin launch Google from a Menlo Park garage."},
-            {"year": "2023", "event": "Generative AI boom accelerates research across Silicon Valley labs."}
+            {"year": "1998", "event": "Larry Page and Sergey Brin launch Google from a Menlo Park garage."}
         ],
-        "trivia": "HP's original garage at 367 Addison Avenue in Palo Alto is officially recognized by California state historical landmark #975 as the 'Birthplace of Silicon Valley'.",
+        "trivia": "HP's original garage at 367 Addison Avenue in Palo Alto is recognized as the 'Birthplace of Silicon Valley'.",
         "mindmaze_questions": [
             {
                 "question": "Why did the region acquire the nickname 'Silicon Valley'?",
                 "options": ["Abundant silicon mining", "Semiconductor chip manufacturing", "Glass production factories", "Solar panel farms"],
                 "correct_index": 1,
                 "hint": "Silicon is the fundamental element used to produce microchips."
-            },
-            {
-                "question": "Which company was famously started in a Palo Alto garage in 1939?",
-                "options": ["Apple", "Hewlett-Packard (HP)", "Google", "Intel"],
-                "correct_index": 1,
-                "hint": "Founded by Bill Hewlett and Dave Packard."
             }
         ],
-        "related_topics": ["Quantum Physics", "Industrial Revolution", "Space Exploration"]
+        "related_topics": ["Quantum Physics", "Industrial Revolution", "Space Exploration", "Microsoft Encarta"]
     },
     "quantum physics": {
         "title": "Quantum Physics",
+        "category": "Science",
         "era": "1900 – Present",
         "wiki_query": "Quantum_mechanics",
         "coordinates": {"lat": 52.5200, "lng": 13.4050},
         "summary": "Quantum Physics is the fundamental branch of physics that explores the behavior of energy and matter at atomic and subatomic scales. Revealing phenomena such as wave-particle duality, quantum superposition, and entanglement, it forms the foundation for lasers, semiconductors, and quantum computing.",
         "milestones": [
             {"year": "1900", "event": "Max Planck proposes energy quantization to explain black-body radiation."},
-            {"year": "1905", "event": "Albert Einstein explains the photoelectric effect using light quanta (photons)."},
-            {"year": "1926", "event": "Schrödinger formulates wave mechanics; Heisenberg introduces Uncertainty Principle."},
-            {"year": "2022", "event": "Nobel Prize awarded for quantum entanglement experiments."}
+            {"year": "1905", "event": "Albert Einstein explains the photoelectric effect using light quanta (photons)."}
         ],
-        "trivia": "Schrödinger's famous thought experiment involving a cat in a box was created to illustrate how absurd quantum superposition seemed when applied to macroscopic objects!",
+        "trivia": "Schrödinger's cat thought experiment was created to illustrate how absurd quantum superposition seemed when applied to macroscopic objects!",
         "mindmaze_questions": [
             {
                 "question": "Who introduced energy quantization in 1900, starting the quantum revolution?",
                 "options": ["Max Planck", "Albert Einstein", "Niels Bohr", "Isaac Newton"],
                 "correct_index": 0,
                 "hint": "He gave his name to Planck's constant (h)."
-            },
-            {
-                "question": "What principle states that position and momentum cannot be simultaneously measured exactly?",
-                "options": ["Exclusion Principle", "Uncertainty Principle", "Superposition Principle", "Relativity"],
-                "correct_index": 1,
-                "hint": "Formulated by Werner Heisenberg."
             }
         ],
         "related_topics": ["Silicon Valley", "Industrial Revolution", "Space Exploration"]
     },
     "renaissance florence": {
         "title": "Renaissance Florence",
+        "category": "Art & Culture",
         "era": "1300 – 1600",
         "wiki_query": "Florence",
         "coordinates": {"lat": 43.7696, "lng": 11.2558},
         "summary": "Florence, Italy, was the cradle of the Italian Renaissance. Backed by wealthy merchant patrons like the Medici family, Florence fostered unprecedented revivals in classical humanism, perspective painting, sculpture, and architecture under masters like Leonardo da Vinci and Michelangelo.",
         "milestones": [
-            {"year": "1348", "event": "Social shifts toward humanism following the plague."},
             {"year": "1436", "event": "Brunelleschi completes the dome of Santa Maria del Fiore."},
             {"year": "1504", "event": "Michelangelo unveils the statue of David."}
         ],
-        "trivia": "Brunelleschi constructed the Florence Cathedral dome without wooden scaffolding support structure, inventing innovative herringbone bricklaying techniques!",
+        "trivia": "Brunelleschi constructed the Florence Cathedral dome without wooden scaffolding support structure!",
         "mindmaze_questions": [
             {
                 "question": "Which banking family was the chief patron of art in Renaissance Florence?",
@@ -314,6 +376,7 @@ PREBAKED_FIXTURES: Dict[str, Dict[str, Any]] = {
     },
     "industrial revolution": {
         "title": "Industrial Revolution",
+        "category": "Technology",
         "era": "1760 – 1840",
         "wiki_query": "Industrial_Revolution",
         "coordinates": {"lat": 53.4808, "lng": -2.2426},
@@ -332,6 +395,52 @@ PREBAKED_FIXTURES: Dict[str, Dict[str, Any]] = {
             }
         ],
         "related_topics": ["Silicon Valley", "Ancient Rome", "Renaissance Florence"]
+    },
+    "ancient egypt": {
+        "title": "Ancient Egypt",
+        "category": "History",
+        "era": "3100 BCE – 30 BCE",
+        "wiki_query": "Ancient_Egypt",
+        "coordinates": {"lat": 29.9792, "lng": 31.1342},
+        "summary": "Ancient Egypt was a civilization of ancient North Africa along the lower reaches of the Nile River. Famous for the Great Pyramids of Giza, hieroglyphic writing, papyrus, and monumental pharaonic architecture.",
+        "milestones": [
+            {"year": "3100 BCE", "event": "Unification of Upper and Lower Egypt under King Menes."},
+            {"year": "2560 BCE", "event": "Completion of the Great Pyramid of Giza under Pharaoh Khufu."},
+            {"year": "1323 BCE", "event": "Burial of Pharaoh Tutankhamun in the Valley of the Kings."}
+        ],
+        "trivia": "The Great Pyramid of Giza was the tallest man-made structure in the world for over 3,800 years!",
+        "mindmaze_questions": [
+            {
+                "question": "Which river sustained ancient Egyptian civilization?",
+                "options": ["Nile River", "Amazon River", "Tigris River", "Euphrates River"],
+                "correct_index": 0,
+                "hint": "It flows northwards through Africa into the Mediterranean Sea."
+            }
+        ],
+        "related_topics": ["Ancient Persia", "Ancient Rome", "The Silk Road"]
+    },
+    "space exploration": {
+        "title": "Space Exploration",
+        "category": "Science",
+        "era": "1957 – Present",
+        "wiki_query": "Space_exploration",
+        "coordinates": {"lat": 28.5721, "lng": -80.6480},
+        "summary": "Space Exploration is the discovery and exploration of celestial structures in outer space by means of evolving space technology. From Sputnik and the Apollo Moon landings to Mars rovers and the James Webb Space Telescope.",
+        "milestones": [
+            {"year": "1957", "event": "Soviet Union launches Sputnik 1, the first artificial Earth satellite."},
+            {"year": "1969", "event": "Apollo 11 lands Neil Armstrong and Buzz Aldrin on the Moon."},
+            {"year": "2021", "event": "James Webb Space Telescope launches to uncover early universe galaxies."}
+        ],
+        "trivia": "Footprints left on the Moon by Apollo astronauts will remain intact for millions of years because there is no wind or water erosion!",
+        "mindmaze_questions": [
+            {
+                "question": "In what year did the Apollo 11 mission successfully land humans on the Moon?",
+                "options": ["1969", "1957", "1975", "1981"],
+                "correct_index": 0,
+                "hint": "One small step for man, one giant leap for mankind."
+            }
+        ],
+        "related_topics": ["Quantum Physics", "Silicon Valley", "Industrial Revolution"]
     }
 }
 
@@ -339,8 +448,21 @@ PREBAKED_FIXTURES: Dict[str, Dict[str, Any]] = {
 def generate_fallback_mock(topic: str) -> Dict[str, Any]:
     """Generate dynamic structured mock article payload for unknown search queries in mock mode."""
     clean_topic = topic.strip().title()
+    
+    category = "History"
+    lower_t = clean_topic.lower()
+    if any(k in lower_t for k in ["tech", "computer", "ai", "robot", "code", "cyber", "digital", "data", "software"]):
+        category = "Technology"
+    elif any(k in lower_t for k in ["physics", "space", "astro", "bio", "chem", "quantum", "gene", "science", "planet"]):
+        category = "Science"
+    elif any(k in lower_t for k in ["art", "music", "paint", "sculpt", "literature", "philosophy", "theatre", "culture"]):
+        category = "Art & Culture"
+    elif any(k in lower_t for k in ["road", "trade", "route", "expedition", "sea", "ocean", "navy", "voyage"]):
+        category = "Trade & Exploration"
+
     return {
         "title": clean_topic,
+        "category": category,
         "era": "Historical & Scientific Epoch",
         "wiki_query": clean_topic.replace(" ", "_"),
         "coordinates": {"lat": 20.0 + (hash(clean_topic) % 50), "lng": (hash(clean_topic * 2) % 360) - 180},
@@ -354,7 +476,7 @@ def generate_fallback_mock(topic: str) -> Dict[str, Any]:
         "mindmaze_questions": [
             {
                 "question": f"What key domain is most associated with {clean_topic}?",
-                "options": ["Human History & Innovation", "Space Travel", "Undersea Exploration", "Particle Physics"],
+                "options": [f"{category} & Innovation", "Space Travel", "Undersea Exploration", "Particle Physics"],
                 "correct_index": 0,
                 "hint": "Consider the foundational impact of this topic on civilization."
             },
@@ -365,24 +487,117 @@ def generate_fallback_mock(topic: str) -> Dict[str, Any]:
                 "hint": "Research across archives and labs remains active today."
             }
         ],
-        "related_topics": ["Ancient Rome", "Silicon Valley", "Quantum Physics", "Renaissance Florence"]
+        "related_topics": ["Microsoft Encarta", "Silicon Valley", "Quantum Physics", "The Silk Road"]
     }
+
+
+def generate_node_structure_with_gemma(topic: str, client, types) -> Dict[str, Any]:
+    """
+    Call gemma-4-31b with High Thinking to create the node structure from the topic & article details.
+    """
+    prompt = f"""
+You are the knowledge engine for 'Encarta 2.0 (NewGen Retro Edition)'.
+Analyze the topic/article: '{topic}'.
+
+Return ONLY a single valid JSON object adhering strictly to this node structure:
+{{
+  "title": "{topic.strip().title()}",
+  "category": "<History, Technology, Science, Art & Culture, or Trade & Exploration>",
+  "era": "<Historical era / years>",
+  "wiki_query": "<exact Wikipedia article title string>",
+  "coordinates": {{"lat": <float -90 to 90>, "lng": <float -180 to 180>}},
+  "summary": "<2-3 sentence engaging educational summary>",
+  "milestones": [
+    {{"year": "<year/date>", "event": "<description of key milestone event>"}},
+    {{"year": "<year/date>", "event": "<description of key milestone event>"}},
+    {{"year": "<year/date>", "event": "<description of key milestone event>"}}
+  ],
+  "trivia": "<Fascinating 'Did You Know?' trivia fact>",
+  "related_topics": ["<Related Topic 1>", "<Related Topic 2>", "<Related Topic 3>"]
+}}
+"""
+    models = ["gemma-4-31b", "gemini-2.5-flash"]
+    for m in models:
+        try:
+            config_kwargs = {"response_mime_type": "application/json"}
+            if hasattr(types, "ThinkingConfig"):
+                try:
+                    config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_budget=2048)
+                except Exception:
+                    pass
+
+            config = types.GenerateContentConfig(**config_kwargs)
+            response = client.models.generate_content(
+                model=m,
+                contents=prompt,
+                config=config
+            )
+            return json.loads(response.text.strip())
+        except Exception as err:
+            print(f"[Gemma Node Structure Warning] Model {m} failed: {err}. Attempting next model...")
+
+    return generate_fallback_mock(topic)
+
+
+def generate_quiz_with_flash(topic: str, summary: str, client, types) -> List[Dict[str, Any]]:
+    """
+    Call gemini-2.5-flash dedicated for MindMaze trivia dungeon quiz generation.
+    """
+    prompt = f"""
+Generate 3 engaging trivia questions for the MindMaze dungeon game for topic '{topic}'.
+Context: {summary}
+
+Return ONLY a single valid JSON array:
+[
+  {{
+    "question": "<Multiple choice trivia question text>",
+    "options": ["<Option A>", "<Option B>", "<Option C>", "<Option D>"],
+    "correct_index": <0, 1, 2, or 3>,
+    "hint": "<Helpful hint>"
+  }},
+  {{
+    "question": "<True or False trivia question text>",
+    "options": ["True", "False"],
+    "correct_index": <0 or 1>,
+    "hint": "<Helpful hint>"
+  }},
+  {{
+    "question": "<Decipher the clue trivia question text>",
+    "options": ["<Option A>", "<Option B>", "<Option C>", "<Option D>"],
+    "correct_index": <0, 1, 2, or 3>,
+    "hint": "<Helpful hint>"
+  }}
+]
+"""
+    try:
+        config = types.GenerateContentConfig(response_mime_type="application/json")
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=config
+        )
+        return json.loads(response.text.strip())
+    except Exception as err:
+        print(f"[Flash Quiz Generation Warning] Flash model quiz generation failed: {err}")
+        mock = generate_fallback_mock(topic)
+        return mock.get("mindmaze_questions", [])
 
 
 def get_article(topic: str) -> ArticleResponse:
     """
-    Main article retrieval with Model Fallback Hierarchy:
-    1. SQLite Cache
+    Main article retrieval pipeline:
+    1. Check SQLite Cache
     2. Check Mock Mode
-    3. Primary Model: gemini-2.5-flash (with High Thinking setting)
-    4. Secondary Fallback Model: gemini-3.5-flash-lite
-    5. Final Fallback: Instant Mock JSON Generator
+    3. Use gemma-4-31b with High Thinking to create Node Structure
+    4. Use gemini-2.5-flash to generate MindMaze Quiz
+    5. Save node into SQLite database & return.
     """
     normalized_key = topic.strip().lower()
 
     # 1. Check SQLite Cache
     cached_data = get_cached_article(normalized_key)
     if cached_data:
+        save_cached_article(topic, cached_data)
         return ArticleResponse(**cached_data)
 
     # 2. Check Mock Mode or missing API Key
@@ -397,81 +612,19 @@ def get_article(topic: str) -> ArticleResponse:
         save_cached_article(topic, data)
         return ArticleResponse(**data)
 
-    # 3. Model Fallback Chain using google-genai SDK
+    # 3. Call LLMs via google-genai SDK
     from google import genai
     from google.genai import types
 
     client = genai.Client(api_key=api_key)
 
-    prompt = f"""
-You are the knowledge engine for 'Encarta 2.0 (NewGen Retro Edition)'.
-Provide an in-depth, accurate article payload for the topic: '{topic}'.
+    # Step 1: Create Node Structure using gemma-4-31b model at High Thinking
+    node_data = generate_node_structure_with_gemma(topic, client, types)
 
-Return ONLY a single valid JSON object adhering strictly to this format:
-{{
-  "title": "{topic.strip().title()}",
-  "era": "<Historical era / years>",
-  "wiki_query": "<exact Wikipedia article title string, e.g. Ancient_Rome>",
-  "coordinates": {{"lat": <float -90 to 90>, "lng": <float -180 to 180>}},
-  "summary": "<2-3 sentence engaging educational summary>",
-  "milestones": [
-    {{"year": "<year/date>", "event": "<description of key milestone event>"}},
-    {{"year": "<year/date>", "event": "<description of key milestone event>"}},
-    {{"year": "<year/date>", "event": "<description of key milestone event>"}}
-  ],
-  "trivia": "<Fascinating 'Did You Know?' trivia fact>",
-  "mindmaze_questions": [
-    {{
-      "question": "<Multiple choice trivia question text>",
-      "options": ["<Option A>", "<Option B>", "<Option C>", "<Option D>"],
-      "correct_index": <0, 1, 2, or 3>,
-      "hint": "<Helpful hint>"
-    }},
-    {{
-      "question": "<True or False trivia question text>",
-      "options": ["True", "False"],
-      "correct_index": <0 or 1>,
-      "hint": "<Helpful hint>"
-    }}
-  ],
-  "related_topics": ["<Related Topic 1>", "<Related Topic 2>", "<Related Topic 3>"]
-}}
-"""
+    # Step 2: Generate MindMaze Quiz using gemini-2.5-flash model
+    quiz_questions = generate_quiz_with_flash(topic, node_data.get("summary", ""), client, types)
+    node_data["mindmaze_questions"] = quiz_questions
 
-    models_to_try = [
-        ("gemini-2.5-flash", True),        # Primary model with thinking budget
-        ("gemini-3.5-flash-lite", False)   # Secondary fallback model
-    ]
-
-    for model_name, use_thinking in models_to_try:
-        try:
-            config_kwargs = {"response_mime_type": "application/json"}
-            if use_thinking and hasattr(types, "ThinkingConfig"):
-                try:
-                    config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_budget=2048)
-                except Exception:
-                    pass
-
-            config = types.GenerateContentConfig(**config_kwargs)
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=config
-            )
-
-            response_text = response.text.strip()
-            data = json.loads(response_text)
-            save_cached_article(topic, data)
-            return ArticleResponse(**data)
-
-        except Exception as err:
-            print(f"[Gemini Fallback Warning] Model {model_name} failed: {err}. Attempting next tier...")
-
-    # 5. Final Fallback to Mock Generator
-    print("[Gemini Fallback] All API models failed or rate-limited. Serving instant mock payload.")
-    if normalized_key in PREBAKED_FIXTURES:
-        data = PREBAKED_FIXTURES[normalized_key]
-    else:
-        data = generate_fallback_mock(topic)
-    save_cached_article(topic, data)
-    return ArticleResponse(**data)
+    # Save to SQLite database (article_cache & knowledge_nodes tables)
+    save_cached_article(topic, node_data)
+    return ArticleResponse(**node_data)
