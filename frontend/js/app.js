@@ -204,27 +204,6 @@ function setupHeaderControls() {
             openMindMazeModal();
         };
     }
-
-    // Reset Database Button
-    const resetBtn = document.getElementById("reset-db-btn");
-    if (resetBtn) {
-        resetBtn.onclick = async () => {
-            if (!confirm("Are you sure you want to reset the Encarta database to initial seed nodes?")) return;
-            soundEngine.playClick();
-            try {
-                const res = await fetch("/api/nodes/reset", { method: "POST" });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (spatialGraph && data.nodes) {
-                        spatialGraph.setNodes(data.nodes);
-                    }
-                    loadArticle("Microsoft Encarta");
-                }
-            } catch (err) {
-                console.error("Failed to reset database:", err);
-            }
-        };
-    }
 }
 
 /**

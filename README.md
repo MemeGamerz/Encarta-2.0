@@ -1,30 +1,71 @@
-# Encarta 2.0 (NewGen Retro Edition)
+# Encarta 2.0 (NewGen Retro Edition) 🏛️⚡
 
-Encarta 2.0 is a full-stack web application that rebuilds Microsoft Encarta '95 for modern browsers. It pairs 90s cyber-nostalgia with WebGL spatial visualization, generative AI context, multi-window desktop management, and native WebAudio synthesis.
+> **Hackathon Edition** — Reimagining 1995's legendary **Microsoft Encarta** as an endlessly expanding 3D WebGL knowledge universe powered by **Gemma 4 31B**, **Gemini 2.5 Flash**, and retro Win95 cyber-aesthetics.
 
-## Key Features
+---
 
-* **3D Spatial Knowledge Graph:** Interactive WebGL hub built with Three.js and `3d-force-graph`. Displays historical and scientific topics using category-specific 3D icons, glowing active halos, and flowing particle connections.
-* **Generative AI Engine:** Backend powered by FastAPI and Google's Gemini API. Generates structured article summaries, horizontal timelines, and interactive trivia. Features an automatic SQLite local cache and a `MOCK_MODE=true` environment flag to run offline without API quota consumption.
-* **Multi-Window Retro Desktop:** Glassmorphic UI with Win95 double-bevel borders. Intercepts Wikipedia REST API links to spawn nested, draggable, stackable, and minimizable floating windows inside the application.
-* **MindMaze 2D Dungeon:** HTML5 Canvas RPG featuring smooth tile-based sprite movement, particle victory effects, and door trivia prompts pulled dynamically from article context.
-* **WebAudio Sound Synthesizer:** Pure code-based synthesizer for UI clicks, window controls, door fanfares, and retro chime audio without external file dependencies.
-* **Multi-Model Fallback Hierarchy:** Automatic backend failover logic (Gemini Flash → Pro → Mock JSON) to guarantee 100% uptime.
+## 🌟 Key Features
 
-## Tech Stack
+* 🌐 **3D Spatial Knowledge Universe (`Three.js` + `3d-force-graph`)**:
+  - Category-specific 3D sprite badges (🏛️ History, ⚛️ Science, 💻 Tech, 🎨 Art, 🧭 Trade).
+  - Unclipped radial soft glow halos for active focused nodes with lerped camera fly-to transitions.
+  - **Color-Coded Animated Light-Beam Wires**: Flowing laser-beam pulses traveling along category-coded wires.
+  - **BFS Single Unified Cluster Engine**: Uses Breadth-First Search (BFS) graph traversal to guarantee 100% full graph connectivity with zero isolated floating islands.
+
+* 🧠 **Dual Generative AI Pipeline**:
+  - **Gemma 4 31B (High Thinking)**: Structures user search topics into node metadata, coordinates, categories, era stamps, historical milestones, and trivia facts.
+  - **Gemini 2.5 Flash**: Generates interactive multiple-choice and true/false trivia questions for the MindMaze dungeon game.
+
+* 💾 **Persistent SQLite Knowledge Database**:
+  - Every topic searched by users is saved into SQLite (`encarta_cache.db`), automatically expanding the permanent 3D knowledge network over time.
+  - Includes a real-time `🔄 Reset DB` button to clean and re-seed the initial canonical 12 knowledge nodes.
+
+* 🖥️ **Multi-Window Retro Desktop Engine**:
+  - Glassmorphic Win95 double-bevel floating windows with stack management, z-index layering, and taskbar integration.
+  - **Wikipedia Hyperlink Interceptor**: Intercepts internal Wikipedia REST API links to spawn nested retro windows on click!
+
+* 🏰 **MindMaze 2D Trivia Dungeon**:
+  - HTML5 Canvas RPG with lerped knight movement and sequential bottleneck map design (requiring 5 unlocked trivia doors to reach the victory trophy chamber).
+
+* 🔊 **WebAudio Synthesizer Engine**:
+  - Zero-asset WebAudio synthesizer generating retro UI clicks, startup chime chord sweeps, node birth chimes, door fanfares, and victory bursts.
+
+---
+
+## 🛠️ Tech Stack
 
 | Layer | Technology |
-| --- | --- |
-| **Backend** | Python 3.11, FastAPI, `google-genai` SDK, SQLite3, Pydantic |
-| **Frontend** | Vanilla JS (ES6 Modules), HTML5 Canvas, WebAudio API, Tailwind CSS, Retro CSS |
-| **Graphics & Data** | Three.js, `3d-force-graph`, Wikipedia REST API |
+| :--- | :--- |
+| **AI Models** | Gemma 4 31B (High Thinking), Gemini 2.5 Flash |
+| **Backend** | Python 3.12, FastAPI, `google-genai` SDK, SQLite3, Pydantic |
+| **Frontend** | Vanilla JS (ES6 Modules), HTML5 Canvas 2D, WebAudio API, Retro CSS |
+| **3D & Data** | Three.js, `3d-force-graph`, Wikipedia REST API |
+| **Deployment** | Vercel (Python Serverless Functions + Static WebGL) |
 
-## Quick Start
+---
 
+## ⚡ Quick Start
+
+```bash
+# 1. Clone repo & create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Launch FastAPI server
+python3 -m backend.main
 ```
-pip install -r backend/requirements.txt
-python3 -m uvicorn backend.main:app --reload --port 8000
 
+Open **`http://localhost:8000`** in your browser!
+
+---
+
+## 🚀 Deploying to Vercel
+
+```bash
+# Deploy instantly with Vercel CLI
+vercel --prod
 ```
-
-Open `http://localhost:8000` in your browser.
+Or connect your GitHub repository to **[vercel.com](https://vercel.com)** — Vercel reads `vercel.json` and `api/index.py` automatically!
