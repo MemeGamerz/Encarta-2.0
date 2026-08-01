@@ -2,3 +2,4 @@
 venv/
 backend/encarta_cache.db
 backend/__pycache__
+api/__pycache__

@@ -8,7 +8,12 @@ from backend.models import ArticleResponse
 # Load environment variables
 load_dotenv()
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "encarta_cache.db")
+# Support Vercel / serverless read-only filesystem by writing SQLite cache to /tmp if needed
+LOCAL_DIR = os.path.dirname(__file__)
+if os.access(LOCAL_DIR, os.W_OK):
+    DB_PATH = os.path.join(LOCAL_DIR, "encarta_cache.db")
+else:
+    DB_PATH = "/tmp/encarta_cache.db"
 
 
 def init_db():
