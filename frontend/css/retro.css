@@ -1,0 +1,819 @@
+/* Encarta 2.0 (NewGen Retro Edition) Polish Design System & Stylesheet */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-dark-slate: #0F172A;
+  --panel-glass-bg: rgba(15, 23, 42, 0.88);
+  --encarta-teal: #00A896;
+  --encarta-teal-dark: #028090;
+  --retro-gold: #FFB703;
+  --retro-gold-light: #FFE082;
+  --win95-bevel-slate: #1E293B;
+  --bevel-light: #475569;
+  --bevel-dark: #020617;
+  --text-main: #F8F9FA;
+  --text-muted: #94A3B8;
+  --danger-red: #EF4444;
+  --font-retro-heading: 'Press Start 2P', monospace;
+  --font-retro-mono: 'Share Tech Mono', monospace;
+  --font-body: 'Space Grotesk', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-dark-slate);
+  color: var(--text-main);
+  font-family: var(--font-body);
+}
+
+/* --- Win95 Custom Scrollbar System --- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--win95-bevel-slate);
+  border: 1px solid var(--bevel-dark);
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--encarta-teal-dark);
+  border: 2px solid;
+  border-color: var(--encarta-teal) var(--bevel-dark) var(--bevel-dark) var(--encarta-teal);
+  border-radius: 1px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--encarta-teal);
+}
+
+/* --- Retro CRT Scanline Overlay --- */
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.22) 50%
+  );
+  background-size: 100% 4px;
+  opacity: 0.4;
+  animation: scanlinePulse 8s infinite alternate ease-in-out;
+}
+
+@keyframes scanlinePulse {
+  0% { opacity: 0.35; }
+  100% { opacity: 0.5; }
+}
+
+/* --- Win95 3D Double-Bevel Border Utilities --- */
+.win95-outset {
+  background-color: var(--win95-bevel-slate);
+  border: 2px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  box-shadow: inset 1px 1px 0px rgba(255, 255, 255, 0.15), 2px 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.win95-inset {
+  background-color: rgba(2, 6, 23, 0.7);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.glass-panel {
+  background: var(--panel-glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* --- Retro Metallic Range Sliders --- */
+.retro-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 110px;
+  height: 8px;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid var(--bevel-light);
+  border-radius: 2px;
+  outline: none;
+}
+
+.retro-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, var(--retro-gold-light), var(--retro-gold));
+  border: 1px solid #000;
+  box-shadow: inset 1px 1px 0px #fff, 1px 1px 3px rgba(0,0,0,0.8);
+  cursor: pointer;
+}
+
+.retro-slider::-webkit-slider-thumb:hover {
+  background: var(--retro-gold);
+  box-shadow: 0 0 6px var(--retro-gold);
+}
+
+/* --- Layout Containers --- */
+#app-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 2px solid var(--bevel-dark);
+}
+
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-retro-heading);
+  font-size: 13px;
+  color: var(--retro-gold);
+  text-shadow: 2px 2px 0px #000;
+  letter-spacing: 1px;
+}
+
+.brand-title .globe-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 0 5px var(--encarta-teal));
+}
+
+/* Search & Controls Header Bar */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-retro-mono);
+  font-size: 11px;
+  color: var(--retro-gold-light);
+  background: rgba(2, 6, 23, 0.6);
+  padding: 4px 8px;
+  border: 1px solid var(--bevel-light);
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 220px;
+  height: 34px;
+  padding: 0 12px;
+  font-family: var(--font-retro-mono);
+  font-size: 13px;
+  color: var(--retro-gold-light);
+  background: rgba(2, 6, 23, 0.85);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  outline: none;
+  user-select: text;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-input:focus {
+  border-color: var(--encarta-teal);
+  box-shadow: 0 0 8px rgba(0, 168, 150, 0.5);
+}
+
+.retro-btn {
+  font-family: var(--font-retro-mono);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--text-main);
+  padding: 6px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--win95-bevel-slate);
+  border: 2px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  transition: transform 0.05s, background-color 0.2s, box-shadow 0.2s;
+}
+
+.retro-btn:hover {
+  background-color: var(--bevel-light);
+  color: var(--retro-gold);
+  box-shadow: 0 0 6px rgba(255, 183, 3, 0.3);
+}
+
+.retro-btn:active {
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  transform: translate(1px, 1px);
+}
+
+.retro-btn-accent {
+  background: var(--encarta-teal-dark);
+  color: var(--retro-gold);
+  border-color: var(--encarta-teal) var(--bevel-dark) var(--bevel-dark) var(--encarta-teal);
+}
+
+.retro-btn-accent:hover {
+  background: var(--encarta-teal);
+  color: #fff;
+}
+
+/* Category Filter Pills */
+.filter-bar {
+  display: flex;
+  gap: 6px;
+}
+
+.filter-pill {
+  font-family: var(--font-retro-mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--bevel-light);
+  color: var(--text-muted);
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.filter-pill.active, .filter-pill:hover {
+  background: var(--encarta-teal-dark);
+  color: var(--retro-gold);
+  border-color: var(--encarta-teal);
+  box-shadow: 0 0 8px rgba(0, 168, 150, 0.4);
+}
+
+/* --- Main WebGL 3D Globe Container --- */
+#globe-container {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* --- Encarta 2.0 Sliding Reader Panel (Component B) --- */
+#reader-panel {
+  position: absolute;
+  top: 70px;
+  right: -520px;
+  width: 480px;
+  height: calc(100vh - 90px);
+  z-index: 80;
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#reader-panel.open {
+  right: 20px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, var(--win95-bevel-slate), var(--encarta-teal-dark));
+  border-bottom: 2px solid var(--bevel-dark);
+}
+
+.panel-header-title {
+  font-family: var(--font-retro-heading);
+  font-size: 11px;
+  color: var(--retro-gold);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  user-select: text;
+}
+
+.article-title {
+  font-family: var(--font-retro-heading);
+  font-size: 15px;
+  color: var(--retro-gold);
+  line-height: 1.4;
+}
+
+.article-era-badge {
+  display: inline-block;
+  font-family: var(--font-retro-mono);
+  font-size: 11px;
+  color: var(--encarta-teal);
+  background: rgba(0, 168, 150, 0.15);
+  border: 1px solid var(--encarta-teal);
+  padding: 3px 8px;
+  margin-top: 4px;
+}
+
+.article-summary {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+/* Connected Horizontal Timeline Line Axis */
+.timeline-section-title {
+  font-family: var(--font-retro-mono);
+  font-size: 12px;
+  color: var(--retro-gold);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline-axis-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 6px;
+}
+
+.timeline-axis-line {
+  position: absolute;
+  top: 16px;
+  left: 10px;
+  right: 10px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--encarta-teal), var(--retro-gold), var(--encarta-teal));
+  box-shadow: 0 0 10px rgba(0, 168, 150, 0.7);
+  z-index: 1;
+}
+
+.timeline-container {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 4px 12px 4px;
+  user-select: none;
+}
+
+.timeline-node-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 190px;
+  max-width: 220px;
+  flex-shrink: 0;
+}
+
+.timeline-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--retro-gold);
+  border: 3px solid var(--win95-bevel-slate);
+  box-shadow: 0 0 10px var(--retro-gold);
+  margin-bottom: 10px;
+  z-index: 3;
+}
+
+.timeline-card {
+  width: 100%;
+  padding: 10px;
+  background: rgba(2, 6, 23, 0.88);
+  border: 1px solid var(--bevel-light);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.timeline-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--retro-gold);
+}
+
+.timeline-year {
+  font-family: var(--font-retro-mono);
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--encarta-teal);
+  margin-bottom: 4px;
+}
+
+.timeline-event {
+  font-size: 12px;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+/* Trivia Card */
+.trivia-card {
+  background: linear-gradient(135deg, rgba(255, 183, 3, 0.12), rgba(2, 6, 23, 0.9));
+  border: 2px solid var(--retro-gold);
+  padding: 12px;
+  position: relative;
+  transition: box-shadow 0.2s ease;
+}
+
+.trivia-card:hover {
+  box-shadow: 0 0 12px rgba(255, 183, 3, 0.3);
+}
+
+.trivia-badge {
+  position: absolute;
+  top: -10px;
+  right: 12px;
+  background: var(--retro-gold);
+  color: #000;
+  font-family: var(--font-retro-heading);
+  font-size: 8px;
+  padding: 2px 6px;
+  border: 1px solid #000;
+}
+
+.trivia-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--retro-gold-light);
+  margin-top: 4px;
+}
+
+/* Related Node Hyperlinks */
+.related-topics-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.related-pill {
+  font-family: var(--font-retro-mono);
+  font-size: 11px;
+  color: var(--encarta-teal);
+  background: rgba(0, 168, 150, 0.12);
+  border: 1px solid var(--encarta-teal);
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.related-pill:hover {
+  background: var(--encarta-teal);
+  color: #000;
+  box-shadow: 0 0 8px rgba(0, 168, 150, 0.5);
+}
+
+/* --- Multi-Window Desktop Engine (Component C & D) --- */
+.retro-window {
+  position: absolute;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  min-width: 340px;
+  min-height: 250px;
+  box-shadow: 4px 4px 24px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 168, 150, 0.2);
+  transform-origin: center center;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Window Animation Lifecycle Classes */
+.retro-window.window-animate-open {
+  animation: windowOpenScale 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.retro-window.window-animate-close {
+  animation: windowCloseScale 0.22s ease-in forwards;
+}
+
+.retro-window.window-animate-minimize {
+  animation: windowMinimizeShrink 0.3s ease-in-out forwards;
+}
+
+@keyframes windowOpenScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.82) translateY(12px);
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    backdrop-filter: blur(14px);
+  }
+}
+
+@keyframes windowCloseScale {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes windowMinimizeShrink {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3) translateY(400px);
+  }
+}
+
+.retro-window.hidden {
+  display: none !important;
+}
+
+.retro-window-titlebar {
+  height: 30px;
+  background: linear-gradient(90deg, var(--encarta-teal-dark), var(--win95-bevel-slate));
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: move;
+  border-bottom: 2px solid var(--bevel-dark);
+}
+
+.retro-window.active-window .retro-window-titlebar {
+  background: linear-gradient(90deg, var(--encarta-teal), var(--encarta-teal-dark));
+}
+
+.retro-window-title {
+  font-family: var(--font-retro-mono);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--retro-gold);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 75px);
+}
+
+.window-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.win-btn {
+  width: 18px;
+  height: 18px;
+  font-family: var(--font-retro-mono);
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 14px;
+  text-align: center;
+  background: var(--win95-bevel-slate);
+  color: var(--text-main);
+  border: 1px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  cursor: pointer;
+}
+
+.win-btn:hover {
+  background: var(--bevel-light);
+  color: var(--retro-gold);
+}
+
+.win-btn.close-btn:hover {
+  background: var(--danger-red);
+  color: #fff;
+}
+
+/* Wikipedia Retro Window Content */
+.wiki-modal-content-box {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: var(--bg-dark-slate);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  user-select: text;
+}
+
+/* Retro styling injection for external Wikipedia HTML */
+.wiki-modal-content-box h1, .wiki-modal-content-box h2, .wiki-modal-content-box h3 {
+  font-family: var(--font-retro-heading);
+  color: var(--retro-gold);
+  margin-top: 16px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--bevel-light);
+  padding-bottom: 4px;
+  font-size: 14px;
+}
+
+.wiki-modal-content-box p {
+  line-height: 1.6;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.wiki-modal-content-box a {
+  color: var(--encarta-teal);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.wiki-modal-content-box a:hover {
+  color: var(--retro-gold);
+}
+
+.wiki-modal-content-box img {
+  max-width: 100%;
+  height: auto;
+  border: 2px solid var(--bevel-light);
+  margin: 10px 0;
+}
+
+/* --- MindMaze Trivia Dungeon Canvas Game (Component D) --- */
+#mindmaze-modal {
+  width: 720px;
+  height: 540px;
+  top: 90px;
+  left: calc(50vw - 360px);
+}
+
+.mindmaze-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #020617;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 12px;
+}
+
+#mindmaze-canvas {
+  background: #090d16;
+  border: 3px solid var(--win95-bevel-slate);
+  box-shadow: 0 0 18px rgba(0, 168, 150, 0.4);
+}
+
+.mindmaze-hud {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--win95-bevel-slate);
+  border: 2px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  font-family: var(--font-retro-mono);
+  font-size: 12px;
+  color: var(--retro-gold);
+  margin-bottom: 8px;
+}
+
+/* MindMaze Trivia Question Overlay Modal */
+#mindmaze-trivia-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(8px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#mindmaze-trivia-overlay.hidden {
+  display: none !important;
+}
+
+.trivia-dialog {
+  width: 520px;
+  padding: 20px;
+  background: var(--win95-bevel-slate);
+  border: 3px solid var(--retro-gold);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.trivia-dialog-header {
+  font-family: var(--font-retro-heading);
+  font-size: 12px;
+  color: var(--retro-gold);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trivia-question-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #fff;
+  font-family: var(--font-body);
+}
+
+.trivia-options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.trivia-option-btn {
+  font-family: var(--font-retro-mono);
+  font-size: 12px;
+  padding: 10px 14px;
+  text-align: left;
+  background: rgba(15, 23, 42, 0.9);
+  border: 2px solid var(--bevel-light);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.trivia-option-btn:hover {
+  border-color: var(--encarta-teal);
+  background: var(--encarta-teal-dark);
+  color: var(--retro-gold);
+}
+
+.trivia-hint-box {
+  font-family: var(--font-retro-mono);
+  font-size: 11px;
+  color: var(--retro-gold-light);
+  background: rgba(255, 183, 3, 0.1);
+  border: 1px dashed var(--retro-gold);
+  padding: 8px;
+  margin-top: 4px;
+}
+
+/* Bottom OS Taskbar */
+#taskbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  z-index: 150;
+  background: var(--win95-bevel-slate);
+  border-top: 2px solid var(--bevel-light);
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.taskbar-item {
+  font-family: var(--font-retro-mono);
+  font-size: 11px;
+  padding: 3px 10px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--bevel-light);
+  color: var(--retro-gold);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.taskbar-item.active {
+  background: var(--encarta-teal-dark);
+  color: #fff;
+  border-color: var(--encarta-teal);
+  box-shadow: 0 0 6px rgba(0, 168, 150, 0.4);
+}

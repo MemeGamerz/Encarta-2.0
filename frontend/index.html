@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encarta 2.0 (NewGen Retro Edition)</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- WebGL 3D Globe / Spatial Graph CDN Dependencies -->
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/3d-force-graph@1.73.1/dist/3d-force-graph.min.js"></script>
+
+    <!-- DOMPurify CDN for Secure XSS Sanitization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+
+    <!-- Retro Design System Stylesheet -->
+    <link rel="stylesheet" href="/css/retro.css">
+</head>
+<body>
+    <!-- Retro CRT Scanline Overlay -->
+    <div class="scanlines"></div>
+
+    <!-- Application Top Navigation Bar -->
+    <header id="app-header" class="win95-outset glass-panel">
+        <div class="brand-title">
+            <span class="globe-icon">🌐</span>
+            <span>ENCARTA 2.0</span>
+        </div>
+
+        <!-- Search Box -->
+        <div class="search-box">
+            <input type="text" id="search-input" class="search-input" placeholder="Search topic (e.g. Rome)..." autocomplete="off">
+            <button id="search-btn" class="retro-btn retro-btn-accent ml-2">Search 🔍</button>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="filter-bar">
+            <button class="filter-pill active" data-category="All">All</button>
+            <button class="filter-pill" data-category="History">History</button>
+            <button class="filter-pill" data-category="Technology">Tech</button>
+            <button class="filter-pill" data-category="Science">Science</button>
+            <button class="filter-pill" data-category="Art & Culture">Art</button>
+        </div>
+
+        <!-- Interactive Sliders (Volume & 3D Rotation Speed) -->
+        <div class="header-controls">
+            <div class="slider-group">
+                <span>🔊</span>
+                <input type="range" id="volume-slider" class="retro-slider" min="0" max="1" step="0.05" value="0.6" title="Master Audio Volume">
+            </div>
+
+            <div class="slider-group">
+                <span>🛸 Speed</span>
+                <input type="range" id="rotation-slider" class="retro-slider" min="0" max="3" step="0.2" value="0.8" title="3D Globe Rotation Speed">
+            </div>
+
+            <button id="open-mindmaze-btn" class="retro-btn retro-btn-accent">
+                🏰 MindMaze
+            </button>
+            <button id="sound-toggle-btn" class="retro-btn">
+                🔊 Mute/Unmute
+            </button>
+        </div>
+    </header>
+
+    <!-- Main WebGL 3D Globe Spatial Canvas (Component A) -->
+    <main id="globe-container"></main>
+
+    <!-- Encarta 2.0 Sliding Reader Panel (Component B) -->
+    <aside id="reader-panel" class="win95-outset glass-panel">
+        <div class="panel-header">
+            <div class="panel-header-title">
+                <span>📖 Encarta 2.0 Knowledge Brief</span>
+            </div>
+            <button id="close-panel-btn" class="win-btn close-btn">X</button>
+        </div>
+        <div class="panel-body">
+            <div>
+                <h1 id="reader-title" class="article-title">Ancient Rome</h1>
+                <div id="reader-era" class="article-era-badge">ERA: 753 BCE – 476 CE</div>
+            </div>
+
+            <p id="reader-summary" class="article-summary">
+                Ancient Rome evolved from an iron-age agrarian settlement on the Italian Peninsula into one of the largest empires in world history...
+            </p>
+
+            <!-- Horizontal Connected Timeline Line Axis -->
+            <div>
+                <div class="timeline-section-title">⏱️ Key Milestones</div>
+                <div class="timeline-axis-wrapper">
+                    <div class="timeline-axis-line"></div>
+                    <div id="reader-timeline" class="timeline-container">
+                        <!-- Dynamic timeline node items rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- "Did You Know?" Trivia Card -->
+            <div class="trivia-card win95-outset">
+                <span class="trivia-badge">DID YOU KNOW?</span>
+                <p id="reader-trivia" class="trivia-text">
+                    The Romans used volcanic ash and seawater to create pozzolana concrete that hardened underwater!
+                </p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col gap-2 my-2">
+                <button id="open-wiki-btn" class="retro-btn retro-btn-accent w-full justify-center text-xs py-2">
+                    Consult Full Wikipedia Archives 📖
+                </button>
+                <button id="reader-mindmaze-btn" class="retro-btn w-full justify-center text-xs py-2">
+                    Launch MindMaze Challenge for this Topic 🏰
+                </button>
+            </div>
+
+            <!-- Related Topics -->
+            <div>
+                <div class="timeline-section-title">🔗 Related Knowledge Nodes</div>
+                <div id="reader-related" class="related-topics-list">
+                    <!-- Dynamic related topic pills rendered here -->
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MindMaze Trivia Dungeon Game Window (Component D Modal) -->
+    <div id="mindmaze-modal" class="retro-window win95-outset glass-panel hidden">
+        <div class="retro-window-titlebar">
+            <div class="retro-window-title">
+                <span>🏰</span>
+                <span>Encarta 2.0 MindMaze Trivia Dungeon</span>
+            </div>
+            <div class="window-controls">
+                <button id="mindmaze-close-btn" class="win-btn close-btn">X</button>
+            </div>
+        </div>
+        <div class="mindmaze-body">
+            <!-- HUD Stats -->
+            <div class="mindmaze-hud">
+                <span id="mm-score">SCORE: 0</span>
+                <span id="mm-topic">TOPIC: Ancient Rome</span>
+                <span id="mm-doors">DOORS UNLOCKED: 0/3</span>
+            </div>
+
+            <!-- Canvas 2D Game Renderer -->
+            <canvas id="mindmaze-canvas"></canvas>
+
+            <!-- Trivia Question Modal Overlay -->
+            <div id="mindmaze-trivia-overlay" class="hidden">
+                <div class="trivia-dialog win95-outset">
+                    <div id="trivia-topic-header" class="trivia-dialog-header">
+                        <span>🚪 Castle Door Trivia Challenge</span>
+                    </div>
+                    <p id="trivia-question-text" class="trivia-question-text">
+                        Which legendary twin brothers were credited with founding Rome?
+                    </p>
+                    <div id="trivia-options-grid" class="trivia-options-grid">
+                        <!-- Dynamic Multiple Choice Buttons -->
+                    </div>
+                    <div id="trivia-hint-box" class="trivia-hint-box hidden">
+                        <!-- Hint text -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Retro OS Taskbar -->
+    <div id="taskbar">
+        <div class="taskbar-item active">🌐 Encarta 2.0 Desktop</div>
+    </div>
+
+    <!-- App Coordination Scripts -->
+    <script type="module" src="/js/app.js"></script>
+</body>
+</html>
