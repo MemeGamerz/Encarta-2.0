@@ -61,11 +61,3 @@ python3 -m backend.main
 Open **`http://localhost:8000`** in your browser!
 
 ---
-
-## 🚀 Deploying to Vercel
-
-```bash
-# Deploy instantly with Vercel CLI
-vercel --prod
-```
-Or connect your GitHub repository to **[vercel.com](https://vercel.com)** — Vercel reads `vercel.json` and `api/index.py` automatically!
