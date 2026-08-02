@@ -1,6 +1,6 @@
 # Encarta 2.0 (NewGen Retro Edition) 🏛️⚡
 
-> Reimagining 1995's legendary **Microsoft Encarta** as an endlessly expanding 3D WebGL knowledge universe powered by **Gemma 4 31B**, **Gemini 2.5 Flash**, and retro Win95 cyber-aesthetics.
+> Reimagining 1995's legendary **Microsoft Encarta** as an endlessly expanding 3D WebGL knowledge universe powered by **AI**, and retro Win95 cyber-aesthetics.
 
 ---
 
@@ -18,7 +18,6 @@
 
 * 💾 **Persistent SQLite Knowledge Database**:
   - Every topic searched by users is saved into SQLite (`encarta_cache.db`), automatically expanding the permanent 3D knowledge network over time.
-  - Includes a real-time `🔄 Reset DB` button to clean and re-seed the initial canonical 12 knowledge nodes.
 
 * 🖥️ **Multi-Window Retro Desktop Engine**:
   - Glassmorphic Win95 double-bevel floating windows with stack management, z-index layering, and taskbar integration.
