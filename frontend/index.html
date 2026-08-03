@@ -35,9 +35,10 @@
         </div>
 
         <!-- Search Box -->
-        <div class="search-box">
+        <div class="search-box flex items-center">
             <input type="text" id="search-input" class="search-input" placeholder="Search topic (e.g. Rome)..." autocomplete="off">
             <button id="search-btn" class="retro-btn retro-btn-accent ml-2">Search 🔍</button>
+            <button id="add-node-btn" class="retro-btn ml-2" title="Generate New Node via Gemma AI">Add Node ⚡</button>
         </div>
 
         <!-- Category Filters -->
@@ -130,6 +131,31 @@
         </div>
     </aside>
 
+    <!-- Add Node Win95 Dialog -->
+    <div id="add-node-dialog-overlay" class="retro-window win95-outset hidden" style="z-index: 9999; position: absolute; top: 100px; left: 100px; min-width: 350px;">
+        <div class="retro-window-titlebar">
+                <div class="retro-window-title">
+                    <span>⚡</span>
+                    <span>Create Knowledge Node</span>
+                </div>
+                <div class="window-controls">
+                    <button id="add-node-close-btn" class="win-btn close-btn">X</button>
+                </div>
+            </div>
+            <div class="panel-body p-4" style="background: rgba(15, 23, 42, 0.9);">
+                <p class="text-sm font-mono text-slate-200 mb-1">Enter a new topic:</p>
+                <input type="text" id="add-node-input" class="search-input w-full mb-3" placeholder="e.g. Apollo 11" autocomplete="off" style="width: 100%;">
+                
+                <p class="text-sm font-mono text-slate-200 mb-1">Wikipedia Article URL/Title (Optional):</p>
+                <input type="text" id="add-node-wiki-input" class="search-input w-full mb-4" placeholder="e.g. https://en.wikipedia.org/wiki/Apollo_11" autocomplete="off" style="width: 100%;">
+                
+                <div class="flex justify-end gap-2" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                    <button id="add-node-cancel-btn" class="retro-btn">Cancel</button>
+                    <button id="add-node-submit-btn" class="retro-btn retro-btn-accent">Synthesize ⚡</button>
+                </div>
+            </div>
+    </div>
+
     <!-- Generating Node Retro Floating Status Modal -->
     <div id="node-loader-modal" class="node-loader-overlay hidden">
         <div class="retro-window win95-outset node-loader-window">
@@ -142,7 +168,7 @@
             <div class="panel-body text-center p-4">
                 <div class="loader-pulse-icon">🧠</div>
                 <div id="loader-status-text" class="text-amber-400 font-mono text-xs font-bold my-2">
-                    GENERATING NODE VIA GEMMA 4 31B (HIGH THINKING)...
+                    SYNTHESIZING KNOWLEDGE NODE...
                 </div>
                 <div class="text-slate-300 text-xs font-mono mb-3">
                     Structuring coordinates, category, milestones & wiring light-beam connections...

@@ -52,11 +52,14 @@ def add_knowledge_node(topic: str = Query(..., description="Topic name to create
 
 
 @app.get("/api/article", response_model=ArticleResponse)
-def fetch_article(topic: str = Query(..., description="Topic name to retrieve")):
+def fetch_article(
+    topic: str = Query(..., description="Topic name to retrieve"),
+    wiki: str = Query(None, description="Optional Wikipedia URL/Title")
+):
     """Fetches structured article summary, timeline, trivia, and MindMaze questions for a topic."""
     if not topic.strip():
         raise HTTPException(status_code=400, detail="Topic query parameter cannot be empty.")
-    return get_article(topic)
+    return get_article(topic, wiki=wiki)
 
 
 # Resolve frontend static directory path

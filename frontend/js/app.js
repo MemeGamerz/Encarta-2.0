@@ -1,6 +1,6 @@
 import { soundEngine } from "./audio.js";
 import { SpatialGraphController } from "./graph3d.js";
-import { spawnWikiWindow } from "./wiki_window.js";
+import { spawnWikiWindow, makeDraggable, bringToFront } from "./wiki_window.js";
 import { mindmaze, openMindMazeModal, closeMindMazeModal } from "./mindmaze.js";
 
 /**
@@ -46,7 +46,7 @@ async function initApp() {
  * Fetch dynamic article payload from Python FastAPI backend `/api/article?topic=...`
  * Automatically syncs & persists new nodes into SQLite and 3D globe network.
  */
-async function loadArticle(topicTitle) {
+async function loadArticle(topicTitle, wikiQuery = "") {
     soundEngine.playClick();
     const panel = document.getElementById("reader-panel");
     const titleEl = document.getElementById("reader-title");
@@ -70,10 +70,14 @@ async function loadArticle(topicTitle) {
 
     if (titleEl) titleEl.textContent = topicTitle;
     if (eraEl) eraEl.textContent = "Loading Archival Records...";
-    if (summaryEl) summaryEl.textContent = "Generating node structure via Gemma 4 31B (High Thinking)...";
+    if (summaryEl) summaryEl.textContent = "Synthesizing node structure...";
 
     try {
-        const res = await fetch(`/api/article?topic=${encodeURIComponent(topicTitle)}`);
+        let url = `/api/article?topic=${encodeURIComponent(topicTitle)}`;
+        if (wikiQuery) {
+            url += `&wiki=${encodeURIComponent(wikiQuery)}`;
+        }
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
@@ -145,6 +149,7 @@ async function loadArticle(topicTitle) {
 function setupHeaderControls() {
     const searchInput = document.getElementById("search-input");
     const searchBtn = document.getElementById("search-btn");
+    const addNodeBtn = document.getElementById("add-node-btn");
     const soundBtn = document.getElementById("sound-toggle-btn");
     const mindmazeBtn = document.getElementById("open-mindmaze-btn");
     const volumeSlider = document.getElementById("volume-slider");
@@ -161,6 +166,52 @@ function setupHeaderControls() {
         searchInput.onkeydown = (e) => {
             if (e.key === "Enter") executeSearch();
         };
+    }
+
+    if (addNodeBtn) {
+        const dialogOverlay = document.getElementById("add-node-dialog-overlay");
+        const closeBtn = document.getElementById("add-node-close-btn");
+        const cancelBtn = document.getElementById("add-node-cancel-btn");
+        const submitBtn = document.getElementById("add-node-submit-btn");
+        const inputField = document.getElementById("add-node-input");
+
+        const wikiField = document.getElementById("add-node-wiki-input");
+
+        const closeDialog = () => {
+            if (dialogOverlay) dialogOverlay.classList.add("hidden");
+            if (inputField) inputField.value = "";
+            if (wikiField) wikiField.value = "";
+        };
+
+        const submitNode = () => {
+            if (inputField && inputField.value.trim()) {
+                const newTopic = inputField.value.trim();
+                const wikiQuery = wikiField ? wikiField.value.trim() : "";
+                closeDialog();
+                loadArticle(newTopic, wikiQuery);
+            }
+        };
+
+        if (dialogOverlay) {
+            makeDraggable(dialogOverlay);
+            
+            addNodeBtn.onclick = () => {
+                dialogOverlay.classList.remove("hidden");
+                bringToFront(dialogOverlay);
+                if (inputField) inputField.focus();
+            };
+
+            closeBtn.onclick = closeDialog;
+            cancelBtn.onclick = closeDialog;
+            submitBtn.onclick = submitNode;
+
+            if (inputField) {
+                inputField.onkeydown = (e) => {
+                    if (e.key === "Enter") submitNode();
+                    if (e.key === "Escape") closeDialog();
+                };
+            }
+        }
     }
 
     // Category Filter Pills

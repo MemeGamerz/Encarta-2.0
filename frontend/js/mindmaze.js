@@ -28,22 +28,88 @@ class MindMazeGame {
         this.particles = [];
         this.isVictory = false;
 
-        // Bottleneck Sequential Maze Layout (0: Floor, 1: Wall, 2: Door, 3: Goal)
-        // All paths to Goal at (13, 9) strictly require unlocking sequential doors!
-        this.map = [
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-            [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-            [1, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 1, 0, 1],
-            [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
-            [1, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 1, 0, 1],
-            [1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-            [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 2, 0, 1],
-            [1, 0, 1, 0, 1, 1, 1, 2, 1, 1, 1, 0, 1, 0, 1],
-            [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        ];
+        this.map = [];
+        this.initialMapState = [];
+    }
 
+    generateRandomMaze() {
+        // 1. Initialize map with walls
+        this.map = Array(this.gridHeight).fill(null).map(() => Array(this.gridWidth).fill(1));
+        
+        // 2. Recursive backtracker
+        const dirs = [
+            [0, -2], [0, 2], [-2, 0], [2, 0]
+        ];
+        
+        const shuffle = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        };
+        
+        const carve = (x, y) => {
+            this.map[y][x] = 0;
+            const shuffledDirs = shuffle([...dirs]);
+            for (const [dx, dy] of shuffledDirs) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx > 0 && nx < this.gridWidth - 1 && ny > 0 && ny < this.gridHeight - 1 && this.map[ny][nx] === 1) {
+                    this.map[y + dy/2][x + dx/2] = 0;
+                    carve(nx, ny);
+                }
+            }
+        };
+        
+        carve(1, 1);
+        this.map[1][1] = 0;
+        
+        // 3. Goal
+        const goalX = this.gridWidth - 2;
+        const goalY = this.gridHeight - 2;
+        this.map[goalY][goalX] = 3;
+        
+        // 4. BFS to find shortest path from (1,1) to goal
+        const queue = [{x: 1, y: 1, path: []}];
+        const visited = Array(this.gridHeight).fill(null).map(() => Array(this.gridWidth).fill(false));
+        visited[1][1] = true;
+        let shortestPath = [];
+        
+        const moveDirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+        
+        while (queue.length > 0) {
+            const curr = queue.shift();
+            if (curr.x === goalX && curr.y === goalY) {
+                shortestPath = curr.path;
+                break;
+            }
+            for (const [dx, dy] of moveDirs) {
+                const nx = curr.x + dx;
+                const ny = curr.y + dy;
+                if (nx > 0 && nx < this.gridWidth - 1 && ny > 0 && ny < this.gridHeight - 1) {
+                    if (!visited[ny][nx] && (this.map[ny][nx] === 0 || this.map[ny][nx] === 3)) {
+                        visited[ny][nx] = true;
+                        queue.push({x: nx, y: ny, path: [...curr.path, {x: nx, y: ny}]});
+                    }
+                }
+            }
+        }
+        
+        // 5. Place 5 doors strictly on the shortest path
+        const validPathTiles = shortestPath.filter(p => this.map[p.y][p.x] === 0);
+        const numDoors = Math.min(5, validPathTiles.length);
+        
+        if (numDoors > 0) {
+            const step = validPathTiles.length / numDoors;
+            for(let i = 0; i < numDoors; i++) {
+                let idx = Math.floor((i * step) + (step/2));
+                if(idx >= validPathTiles.length) idx = validPathTiles.length - 1;
+                const tile = validPathTiles[idx];
+                this.map[tile.y][tile.x] = 2; // Door
+            }
+        }
+        
         this.initialMapState = JSON.parse(JSON.stringify(this.map));
     }
 
@@ -95,6 +161,7 @@ class MindMazeGame {
     }
 
     resetGame() {
+        this.generateRandomMaze();
         this.player = { x: 1, y: 1, renderX: 1, renderY: 1, dir: "down" };
         this.score = 0;
         this.doorsUnlocked = 0;
