@@ -30,6 +30,7 @@ class MindMazeGame {
 
         this.map = [];
         this.initialMapState = [];
+        this.initialized = false;
     }
 
     generateRandomMaze() {
@@ -114,12 +115,22 @@ class MindMazeGame {
     }
 
     init() {
+        if (this.initialized) return;
+        this.initialized = true;
+
         this.canvas = document.getElementById("mindmaze-canvas");
         if (!this.canvas) return;
         this.ctx = this.canvas.getContext("2d");
 
-        this.canvas.width = this.gridWidth * this.tileSize;
-        this.canvas.height = this.gridHeight * this.tileSize;
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = this.gridWidth * this.tileSize * dpr;
+        this.canvas.height = this.gridHeight * this.tileSize * dpr;
+        
+        // CSS size dictates the display bounds
+        this.canvas.style.width = `${this.gridWidth * this.tileSize}px`;
+        this.canvas.style.height = `${this.gridHeight * this.tileSize}px`;
+        
+        this.ctx.scale(dpr, dpr);
 
         window.addEventListener("keydown", (e) => this.handleKeyDown(e));
 

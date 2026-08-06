@@ -12,6 +12,8 @@ let currentArticleData = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
+    const loaderModal = document.getElementById("node-loader-modal");
+    if (loaderModal) makeDraggable(loaderModal);
 });
 
 async function initApp() {
@@ -56,6 +58,9 @@ async function loadArticle(topicTitle, wikiQuery = "") {
     const triviaEl = document.getElementById("reader-trivia");
     const relatedEl = document.getElementById("reader-related");
     
+    const loaderModal = document.getElementById("node-loader-modal");
+    const loaderTitle = document.getElementById("loader-topic-title");
+    
     const isExistingNode = spatialGraph && spatialGraph.nodesData && spatialGraph.nodesData.some(n => 
         n.title.toLowerCase() === topicTitle.toLowerCase() || 
         n.id === topicTitle.toLowerCase().trim().replace(/\s+/g, "-")
@@ -64,6 +69,7 @@ async function loadArticle(topicTitle, wikiQuery = "") {
     if (!isExistingNode && loaderModal && loaderTitle) {
         loaderTitle.textContent = `Generating Node: "${topicTitle}"...`;
         loaderModal.classList.remove("hidden");
+        bringToFront(loaderModal);
     }
 
     if (panel) panel.classList.add("open");
@@ -88,13 +94,17 @@ async function loadArticle(topicTitle, wikiQuery = "") {
         if (titleEl) titleEl.textContent = data.title;
         if (eraEl) eraEl.textContent = `ERA: ${data.era}`;
         if (summaryEl) summaryEl.textContent = data.summary;
+        
+        // Dynamically update the browser tab title
+        document.title = `Encarta 2.0 - ${data.title}`;
 
         // Render Historical Milestones Timeline along Connected Line Axis
         if (timelineEl) {
             timelineEl.innerHTML = "";
-            data.milestones.forEach(m => {
+            data.milestones.forEach((m, index) => {
                 const nodeItem = document.createElement("div");
                 nodeItem.className = "timeline-node-item";
+                nodeItem.style.animationDelay = `${index * 0.15}s`;
                 nodeItem.innerHTML = `
                     <div class="timeline-dot"></div>
                     <div class="timeline-card win95-inset">
@@ -136,6 +146,9 @@ async function loadArticle(topicTitle, wikiQuery = "") {
     } catch (err) {
         console.error("[Encarta 2.0 API Error]", err);
         if (summaryEl) summaryEl.textContent = "Unable to fetch article data. Please ensure backend server is running.";
+        if (timelineEl) timelineEl.innerHTML = "";
+        if (triviaEl) triviaEl.textContent = "";
+        if (relatedEl) relatedEl.innerHTML = "";
     } finally {
         if (loaderModal) {
             loaderModal.classList.add("hidden");

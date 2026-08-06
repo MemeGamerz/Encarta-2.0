@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Encarta 2.0 (NewGen Retro Edition)</title>
     
     <!-- Google Fonts -->
@@ -131,8 +131,7 @@
         </div>
     </aside>
 
-    <!-- Add Node Win95 Dialog -->
-    <div id="add-node-dialog-overlay" class="retro-window win95-outset hidden" style="z-index: 9999; position: absolute; top: 100px; left: 100px; min-width: 350px;">
+    <div id="add-node-dialog-overlay" class="retro-window win95-outset hidden modal-center">
         <div class="retro-window-titlebar">
                 <div class="retro-window-title">
                     <span>⚡</span>
@@ -142,14 +141,14 @@
                     <button id="add-node-close-btn" class="win-btn close-btn">X</button>
                 </div>
             </div>
-            <div class="panel-body p-4" style="background: rgba(15, 23, 42, 0.9);">
+            <div class="panel-body p-4 bg-slate-900/90">
                 <p class="text-sm font-mono text-slate-200 mb-1">Enter a new topic:</p>
-                <input type="text" id="add-node-input" class="search-input w-full mb-3" placeholder="e.g. Apollo 11" autocomplete="off" style="width: 100%;">
+                <input type="text" id="add-node-input" class="search-input w-full mb-3" placeholder="e.g. Apollo 11" autocomplete="off">
                 
                 <p class="text-sm font-mono text-slate-200 mb-1">Wikipedia Article URL/Title (Optional):</p>
-                <input type="text" id="add-node-wiki-input" class="search-input w-full mb-4" placeholder="e.g. https://en.wikipedia.org/wiki/Apollo_11" autocomplete="off" style="width: 100%;">
+                <input type="text" id="add-node-wiki-input" class="search-input w-full mb-4" placeholder="e.g. https://en.wikipedia.org/wiki/Apollo_11" autocomplete="off">
                 
-                <div class="flex justify-end gap-2" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <div class="flex justify-end gap-2">
                     <button id="add-node-cancel-btn" class="retro-btn">Cancel</button>
                     <button id="add-node-submit-btn" class="retro-btn retro-btn-accent">Synthesize ⚡</button>
                 </div>

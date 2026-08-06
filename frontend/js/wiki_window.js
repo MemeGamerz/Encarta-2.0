@@ -54,8 +54,19 @@ export function makeDraggable(windowElement) {
 
     titlebar.addEventListener("mousedown", (e) => {
         if (e.target.classList.contains("win-btn")) return;
+        
+        // Disable dragging on mobile where Bottom Sheets are used
+        if (window.innerWidth <= 768) return;
+
         activeDragWindow = windowElement;
         const rect = windowElement.getBoundingClientRect();
+        
+        if (windowElement.classList.contains("modal-center")) {
+            windowElement.classList.remove("modal-center");
+            windowElement.style.left = `${rect.left}px`;
+            windowElement.style.top = `${rect.top}px`;
+        }
+        
         dragOffsetX = e.clientX - rect.left;
         dragOffsetY = e.clientY - rect.top;
         bringToFront(windowElement);

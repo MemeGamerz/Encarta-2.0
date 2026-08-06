@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -73,6 +74,14 @@ if os.path.exists(FRONTEND_DIR):
     @app.get("/index.html")
     def read_index():
         return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+
+    @app.exception_handler(404)
+    async def custom_404_handler(request: Request, exc: StarletteHTTPException):
+        # Always serve the retro 404 page for unmatched routes
+        four_o_four_path = os.path.join(FRONTEND_DIR, "404.html")
+        if os.path.exists(four_o_four_path):
+            return FileResponse(four_o_four_path, status_code=404)
+        return {"detail": "Not Found"}
 
 
 if __name__ == "__main__":

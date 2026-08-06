@@ -14,6 +14,7 @@ export class SpatialGraphController {
         this.selectedNode = null;
         this.autoRotate = true;
         this.rotationSpeed = 0.8;
+        this.threeDisposables = [];
     }
 
     async init() {
@@ -204,12 +205,18 @@ export class SpatialGraphController {
 
         const isSelected = this.selectedNode && (this.selectedNode.id === node.id || this.selectedNode.title === node.title);
 
+        const dpr = window.devicePixelRatio || 1;
+        const baseSize = 256;
+        
         const canvas = document.createElement("canvas");
-        canvas.width = 256;
-        canvas.height = 256;
+        canvas.width = baseSize * dpr;
+        canvas.height = baseSize * dpr;
         const ctx = canvas.getContext("2d");
+        
+        // Scale context so all following drawing operations use the original coordinate system
+        ctx.scale(dpr, dpr);
 
-        ctx.clearRect(0, 0, 256, 256);
+        ctx.clearRect(0, 0, baseSize, baseSize);
 
         const cx = 128;
         const cy = 100;
@@ -258,6 +265,8 @@ export class SpatialGraphController {
             alphaTest: 0.01
         });
         const sprite = new THREE.Sprite(material);
+        
+        this.threeDisposables.push(texture, material);
 
         const spriteScale = isSelected ? 32 : 25;
         sprite.scale.set(spriteScale, spriteScale, 1);
@@ -306,6 +315,9 @@ export class SpatialGraphController {
                 const geometry = new THREE.BufferGeometry();
                 geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
                 const line = new THREE.Line(geometry, lineMat);
+                
+                this.threeDisposables.push(lineMat, geometry);
+                
                 return line;
             })
             .linkPositionUpdate((line, { start, end }) => {
@@ -324,9 +336,12 @@ export class SpatialGraphController {
                     line.material.dashOffset -= 0.15;
                 }
                 return true;
-            })
+            });
 
-            .onNodeClick(node => {
+        // Enable High-DPI Rendering for Retina displays
+        this.graph.renderer().setPixelRatio(window.devicePixelRatio || 1);
+
+        this.graph.onNodeClick(node => {
                 soundEngine.playNodeFocus();
                 this.focusNode(node);
                 if (this.onNodeSelect) {
@@ -356,6 +371,9 @@ export class SpatialGraphController {
 
         soundEngine.playNodeBirthChime();
 
+        // Garbage Collect old Three.js objects before regenerating them
+        this.disposeThreeObjects();
+
         this.graph.nodeThreeObject(n => this.createNodeSprite(n));
 
         const distance = 150;
@@ -375,10 +393,22 @@ export class SpatialGraphController {
         if (!rawTopics || !Array.isArray(rawTopics)) return;
         this.buildGraphData(rawTopics);
         if (this.graph) {
+            this.disposeThreeObjects();
             this.graph.graphData({
                 nodes: this.nodesData,
                 links: this.cleanLinks()
             });
+        }
+    }
+    
+    disposeThreeObjects() {
+        if (this.threeDisposables && this.threeDisposables.length > 0) {
+            this.threeDisposables.forEach(obj => {
+                if (obj && typeof obj.dispose === 'function') {
+                    obj.dispose();
+                }
+            });
+            this.threeDisposables = [];
         }
     }
 
