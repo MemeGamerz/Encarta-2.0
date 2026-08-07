@@ -14,53 +14,59 @@ import shutil
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOCAL_DB = os.path.join(PROJECT_ROOT, "database.db")
 
-# Vercel / Serverless Environment Compatibility:
-# If running in a read-only serverless container (like Vercel), copy pre-seeded database.db to /tmp/database.db
-if os.access(PROJECT_ROOT, os.W_OK):
-    DB_PATH = LOCAL_DB
-else:
+# Vercel / AWS Lambda Serverless Detection:
+# In Vercel serverless environments, the deployment directory is strictly read-only.
+# We always use /tmp/database.db and copy the bundled database.db into /tmp.
+IS_SERVERLESS = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME") or os.getenv("LAMBDA_TASK_ROOT"))
+
+if IS_SERVERLESS or not os.access(PROJECT_ROOT, os.W_OK):
     TMP_DB = "/tmp/database.db"
-    if not os.path.exists(TMP_DB) and os.path.exists(LOCAL_DB):
-        try:
+    try:
+        if not os.path.exists(TMP_DB) and os.path.exists(LOCAL_DB):
             shutil.copy2(LOCAL_DB, TMP_DB)
-        except Exception as e:
-            print(f"[Vercel DB Copy Warning] {e}")
-    DB_PATH = TMP_DB if os.path.exists(TMP_DB) else LOCAL_DB
+    except Exception as e:
+        print(f"[Vercel DB Copy Warning] {e}")
+    DB_PATH = TMP_DB
+else:
+    DB_PATH = LOCAL_DB
 
 
 def init_db(force_reset: bool = False):
     """Initialize or reset the SQLite cache and knowledge_nodes table."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
 
-    if force_reset:
-        cursor.execute("DROP TABLE IF EXISTS article_cache")
-        cursor.execute("DROP TABLE IF EXISTS knowledge_nodes")
+        if force_reset:
+            cursor.execute("DROP TABLE IF EXISTS article_cache")
+            cursor.execute("DROP TABLE IF EXISTS knowledge_nodes")
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS article_cache (
-            topic TEXT PRIMARY KEY,
-            data TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS knowledge_nodes (
-            id TEXT PRIMARY KEY,
-            title TEXT UNIQUE NOT NULL,
-            category TEXT NOT NULL,
-            era TEXT NOT NULL,
-            lat REAL NOT NULL,
-            lng REAL NOT NULL,
-            summary_short TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS article_cache (
+                topic TEXT PRIMARY KEY,
+                data TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS knowledge_nodes (
+                id TEXT PRIMARY KEY,
+                title TEXT UNIQUE NOT NULL,
+                category TEXT NOT NULL,
+                era TEXT NOT NULL,
+                lat REAL NOT NULL,
+                lng REAL NOT NULL,
+                summary_short TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+        conn.close()
 
-    # Populate clean initial seed topics
-    seed_initial_nodes_into_db(force_reset)
+        # Populate clean initial seed topics
+        seed_initial_nodes_into_db(force_reset)
+    except Exception as err:
+        print(f"[DB Initialization Warning] {err}")
 
 
 def seed_initial_nodes_into_db(force_reset: bool = False):
@@ -154,25 +160,47 @@ def save_cached_article(topic: str, article_dict: Dict[str, Any]):
 
 
 def get_all_nodes() -> List[Dict[str, Any]]:
-    """Fetch all persistent knowledge nodes from SQLite DB."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, title, category, era, lat, lng, summary_short FROM knowledge_nodes ORDER BY created_at ASC")
-    rows = cursor.fetchall()
-    conn.close()
+    """Fetch all persistent knowledge nodes from SQLite DB with in-memory fallback."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, title, category, era, lat, lng, summary_short FROM knowledge_nodes ORDER BY created_at ASC")
+        rows = cursor.fetchall()
+        conn.close()
 
-    nodes = []
-    for r in rows:
-        nodes.append({
-            "id": r[0],
-            "title": r[1],
-            "category": r[2],
-            "era": r[3],
-            "lat": r[4],
-            "lng": r[5],
-            "summary_short": r[6]
+        if rows:
+            nodes = []
+            for r in rows:
+                nodes.append({
+                    "id": r[0],
+                    "title": r[1],
+                    "category": r[2],
+                    "era": r[3],
+                    "lat": r[4],
+                    "lng": r[5],
+                    "summary_short": r[6]
+                })
+            return nodes
+    except Exception as err:
+        print(f"[get_all_nodes DB Warning] {err}")
+
+    # Fallback to in-memory fixtures for serverless cold boot
+    fallback_nodes = []
+    for key, data in PREBAKED_FIXTURES.items():
+        title = data.get("title", key.title())
+        node_id = re.sub(r'\s+', '-', title.strip().lower())
+        summary = data.get("summary", "")
+        summary_short = summary[:110] + "..." if len(summary) > 110 else summary
+        fallback_nodes.append({
+            "id": node_id,
+            "title": title,
+            "category": data.get("category", "History"),
+            "era": data.get("era", "Historical Epoch"),
+            "lat": float(data.get("coordinates", {}).get("lat", 20.0)),
+            "lng": float(data.get("coordinates", {}).get("lng", 0.0)),
+            "summary_short": summary_short
         })
-    return nodes
+    return fallback_nodes
 
 
 # Comprehensive Pre-baked Seed Topics Fixtures
