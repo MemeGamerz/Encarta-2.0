@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from typing import List, Dict, Any
+import urllib.request
+import urllib.error
 
 from backend.models import ArticleResponse, KnowledgeNode
 from backend.gemini_service import get_article, get_all_nodes, init_db
@@ -60,6 +62,14 @@ def fetch_article(
     """Fetches structured article summary, timeline, trivia, and MindMaze questions for a topic."""
     if not topic.strip():
         raise HTTPException(status_code=400, detail="Topic query parameter cannot be empty.")
+        
+    if wiki and wiki.startswith("http"):
+        try:
+            req = urllib.request.Request(wiki, method="HEAD", headers={'User-Agent': 'Mozilla/5.0'})
+            urllib.request.urlopen(req, timeout=5)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid or unreachable Wikipedia URL provided: {str(e)}")
+            
     return get_article(topic, wiki=wiki)
 
 
@@ -75,13 +85,21 @@ if os.path.exists(FRONTEND_DIR):
     def read_index():
         return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
-    @app.exception_handler(404)
-    async def custom_404_handler(request: Request, exc: StarletteHTTPException):
+    @app.exception_handler(StarletteHTTPException)
+    async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+        if exc.status_code == 404:
+            four_o_four_path = os.path.join(FRONTEND_DIR, "404.html")
+            if os.path.exists(four_o_four_path):
+                return FileResponse(four_o_four_path, status_code=404)
+        return FileResponse(os.path.join(FRONTEND_DIR, "404.html"), status_code=404)
+
+    @app.get("/{full_path:path}")
+    async def catch_all_routes(full_path: str):
         # Always serve the retro 404 page for unmatched routes
         four_o_four_path = os.path.join(FRONTEND_DIR, "404.html")
         if os.path.exists(four_o_four_path):
             return FileResponse(four_o_four_path, status_code=404)
-        return {"detail": "Not Found"}
+        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 
 if __name__ == "__main__":

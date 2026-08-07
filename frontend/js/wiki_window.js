@@ -145,8 +145,13 @@ export async function spawnWikiWindow(wikiQuery) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, "text/html");
 
-        // Remove unwanted elements
-        doc.querySelectorAll("script, style, link, nav, .mw-editsection").forEach(el => el.remove());
+        // Comprehensive removal of Wikipedia clutter, edit buttons, and meta navigation
+        doc.querySelectorAll(
+            "script, style, link, nav, .mw-editsection, .mw-editsection-like, " +
+            ".reference, .reflist, sup.reference, .noprint, .mw-jump-link, " +
+            ".ambox, .navbox, .catlinks, .vector-menu, .mw-indicators, " +
+            "a[href*='action=edit'], a[href*='veaction=edit'], a[title*='Edit this'], a[title*='Edit section']"
+        ).forEach(el => el.remove());
 
         // 1. Sanitize raw HTML and inject into contentBox FIRST
         const rawHtml = doc.body.innerHTML;
@@ -156,7 +161,10 @@ export async function spawnWikiWindow(wikiQuery) {
         // 2. Attach click event interceptors to all <a> tags inside contentBox (AFTER DOM injection!)
         contentBox.querySelectorAll("a").forEach(a => {
             const href = a.getAttribute("href");
-            if (!href) return;
+            if (!href || href.includes("action=edit")) {
+                a.remove();
+                return;
+            }
 
             let topic = null;
             if (href.startsWith("./")) {
@@ -169,7 +177,18 @@ export async function spawnWikiWindow(wikiQuery) {
 
             if (topic) {
                 const cleanTopic = decodeURIComponent(topic.split("#")[0]).replace(/_/g, " ").trim();
-                if (cleanTopic && !cleanTopic.includes(":") && !cleanTopic.startsWith("File")) {
+                const isMetaOrSpecial = cleanTopic.includes(":") || 
+                                       cleanTopic.startsWith("File") || 
+                                       cleanTopic.startsWith("Special") || 
+                                       cleanTopic.startsWith("Wikipedia") || 
+                                       cleanTopic.startsWith("Help") || 
+                                       cleanTopic.startsWith("Template") || 
+                                       cleanTopic.startsWith("Category") || 
+                                       cleanTopic.startsWith("Portal") || 
+                                       cleanTopic.startsWith("Talk") ||
+                                       href.includes("action=edit");
+
+                if (cleanTopic && !isMetaOrSpecial) {
                     a.setAttribute("href", "#");
                     a.style.cursor = "pointer";
                     a.title = `Open Encarta 2.0 Archival Window for ${cleanTopic}`;
@@ -189,11 +208,19 @@ export async function spawnWikiWindow(wikiQuery) {
     } catch (err) {
         console.warn("[Wikipedia API Fetch Warning]", err);
         contentBox.innerHTML = `
-            <div class="win95-outset p-6 m-4 text-center">
-                <h3 class="text-amber-400 font-mono text-base mb-2">⚠️ Archival Fetch Warning</h3>
-                <p class="text-slate-300 text-xs mb-4">Unable to directly render live Wikipedia content for <strong>"${displayTitle}"</strong>.</p>
-                <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(cleanQuery)}" target="_blank" class="retro-btn retro-btn-accent text-xs">
-                    Open External Wikipedia Entry 🌐
+            <div class="p-6 text-center" style="background: rgba(15, 23, 42, 0.95); height: 100%;">
+                <div class="text-5xl mb-3">🛸</div>
+                <h3 class="text-amber-400 font-mono text-base font-bold mb-2">Error 404: Knowledge Node Not Found</h3>
+                <p class="text-slate-300 text-xs mb-4">The archival network could not locate this backlink in Wikipedia records: <strong>"${displayTitle}"</strong></p>
+                <div class="win95-inset bg-black p-3 text-left font-mono text-xs text-green-400 mb-4">
+                    C:\\> DIR /S /B "${cleanQuery}"<br>
+                    Searching Encyclopedia Archives...<br>
+                    Error 404: File or Backlink Not Found.<br>
+                    <br>
+                    C:\\> _
+                </div>
+                <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(cleanQuery)}" target="_blank" class="retro-btn retro-btn-accent text-xs" style="display: inline-block; text-decoration: none;">
+                    Search External Wikipedia 🌐
                 </a>
             </div>
         `;

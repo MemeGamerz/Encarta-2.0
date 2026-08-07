@@ -26,6 +26,9 @@
 <body>
     <!-- Retro CRT Scanline Overlay -->
     <div class="scanlines"></div>
+    
+    <!-- Dynamic Starfield Background -->
+    <canvas id="starfield" class="starfield"></canvas>
 
     <!-- Application Top Navigation Bar -->
     <header id="app-header" class="win95-outset glass-panel">
@@ -35,8 +38,9 @@
         </div>
 
         <!-- Search Box -->
-        <div class="search-box flex items-center">
+        <div class="search-box flex items-center relative">
             <input type="text" id="search-input" class="search-input" placeholder="Search topic (e.g. Rome)..." autocomplete="off">
+            <ul id="search-autocomplete" class="autocomplete-dropdown hidden"></ul>
             <button id="search-btn" class="retro-btn retro-btn-accent ml-2">Search 🔍</button>
             <button id="add-node-btn" class="retro-btn ml-2" title="Generate New Node via Gemma AI">Add Node ⚡</button>
         </div>

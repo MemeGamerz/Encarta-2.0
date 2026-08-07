@@ -88,15 +88,394 @@ export class SpatialGraphController {
 
     buildFallbackGraphData() {
         this.buildGraphData([
-            { id: "microsoft-encarta", title: "Microsoft Encarta", category: "Technology", era: "1993 – 2009", lat: 47.6405, lng: -122.1297, summary_short: "Digital CD-ROM encyclopedia." },
-            { id: "ancient-rome", title: "Ancient Rome", category: "History", era: "753 BCE – 476 CE", lat: 41.9028, lng: 12.4964, summary_short: "Roman Law and Aqueducts." },
-            { id: "byzantine-empire", title: "Byzantine Empire", category: "History", era: "330 CE – 1453 CE", lat: 41.0082, lng: 28.9784, summary_short: "Constantinople crossroads." },
-            { id: "silk-road", title: "The Silk Road", category: "Trade & Exploration", era: "130 BCE – 1453 CE", lat: 34.3416, lng: 108.9398, summary_short: "Transcontinental trade." },
-            { id: "silicon-valley", title: "Silicon Valley", category: "Technology", era: "1939 – Present", lat: 37.3875, lng: -122.0575, summary_short: "Microchip and AI epicenter." },
-            { id: "quantum-physics", title: "Quantum Physics", category: "Science", era: "1900 – Present", lat: 52.5200, lng: 13.4050, summary_short: "Wave-particle duality." },
-            { id: "renaissance-florence", title: "Renaissance Florence", category: "Art & Culture", era: "1300 – 1600", lat: 43.7696, lng: 11.2558, summary_short: "Brunelleschi and Medici patronage." },
-            { id: "industrial-revolution", title: "Industrial Revolution", category: "Technology", era: "1760 – 1840", lat: 53.4808, lng: -2.2426, summary_short: "Steam power and mechanization." }
-        ]);
+            {
+                        "id": "mesopotamia",
+                        "title": "Mesopotamia",
+                        "category": "History",
+                        "era": "4000 BCE \u2013 539 BCE",
+                        "lat": 32.5364,
+                        "lng": 44.4208,
+                        "summary_short": "Mesopotamia, situated between the Tigris and Euphrates rivers in modern-day Iraq, is widely regarded as the Cr..."
+            },
+            {
+                        "id": "mayan-civilization",
+                        "title": "Mayan Civilization",
+                        "category": "History",
+                        "era": "2000 BCE \u2013 1697 CE",
+                        "lat": 20.6843,
+                        "lng": -88.5678,
+                        "summary_short": "The Maya civilization flourished across Mesoamerica, renowned for its sophisticated logo-syllabic writing syst..."
+            },
+            {
+                        "id": "french-revolution",
+                        "title": "French Revolution",
+                        "category": "History",
+                        "era": "1789 \u2013 1799",
+                        "lat": 48.8566,
+                        "lng": 2.3522,
+                        "summary_short": "The French Revolution was a period of radical political and societal change in France that began with the Esta..."
+            },
+            {
+                        "id": "ottoman-empire",
+                        "title": "Ottoman Empire",
+                        "category": "History",
+                        "era": "1299 \u2013 1922",
+                        "lat": 41.0082,
+                        "lng": 28.9784,
+                        "summary_short": "Spanning Southeast Europe, Western Asia, and North Africa for over six centuries, the Ottoman Empire served as..."
+            },
+            {
+                        "id": "viking-age",
+                        "title": "Viking Age",
+                        "category": "History",
+                        "era": "793 \u2013 1066 CE",
+                        "lat": 59.9139,
+                        "lng": 10.7522,
+                        "summary_short": "The Viking Age was a period of Scandinavian maritime exploration, trade, and settlement. Norse seafarers navig..."
+            },
+            {
+                        "id": "mongol-empire",
+                        "title": "Mongol Empire",
+                        "category": "History",
+                        "era": "1206 \u2013 1368",
+                        "lat": 47.9188,
+                        "lng": 106.9176,
+                        "summary_short": "Founded by Genghis Khan, the Mongol Empire became the largest contiguous land empire in history. Its Pax Mongo..."
+            },
+            {
+                        "id": "cryptography-&-enigma",
+                        "title": "Cryptography & Enigma",
+                        "category": "Technology",
+                        "era": "1900 \u2013 Present",
+                        "lat": 51.9977,
+                        "lng": -0.7407,
+                        "summary_short": "Cryptography is the science of secure communication. From wartime cipher machines like Enigma to Alan Turing's..."
+            },
+            {
+                        "id": "world-wide-web",
+                        "title": "World Wide Web",
+                        "category": "Technology",
+                        "era": "1989 \u2013 Present",
+                        "lat": 46.233,
+                        "lng": 6.0557,
+                        "summary_short": "The World Wide Web is an information system enabling document retrieval via HTTP links over the Internet. Inve..."
+            },
+            {
+                        "id": "quantum-computing",
+                        "title": "Quantum Computing",
+                        "category": "Technology",
+                        "era": "1980 \u2013 Present",
+                        "lat": 37.403,
+                        "lng": -122.0322,
+                        "summary_short": "Quantum computing harnesses quantum mechanical phenomena like superposition and entanglement to perform comple..."
+            },
+            {
+                        "id": "the-telegraph",
+                        "title": "The Telegraph",
+                        "category": "Technology",
+                        "era": "1837 \u2013 1950s",
+                        "lat": 40.7128,
+                        "lng": -74.006,
+                        "summary_short": "The electrical telegraph was the first technology to enable instant long-distance text transmission via Morse ..."
+            },
+            {
+                        "id": "dna-double-helix",
+                        "title": "DNA Double Helix",
+                        "category": "Science",
+                        "era": "1953 \u2013 Present",
+                        "lat": 52.2053,
+                        "lng": 0.1218,
+                        "summary_short": "The discovery of the double-helical structure of Deoxyribonucleic Acid (DNA) unlocked the molecular code of bi..."
+            },
+            {
+                        "id": "theory-of-evolution",
+                        "title": "Theory of Evolution",
+                        "category": "Science",
+                        "era": "1859 \u2013 Present",
+                        "lat": -0.9538,
+                        "lng": -90.9656,
+                        "summary_short": "Formulated by Charles Darwin, the theory of evolution by natural selection explains how biological organisms a..."
+            },
+            {
+                        "id": "james-webb-telescope",
+                        "title": "James Webb Telescope",
+                        "category": "Science",
+                        "era": "2021 \u2013 Present",
+                        "lat": 28.5721,
+                        "lng": -80.648,
+                        "summary_short": "NASA's premier space science observatory, the James Webb Space Telescope uses high-resolution infrared instrum..."
+            },
+            {
+                        "id": "large-hadron-collider",
+                        "title": "Large Hadron Collider",
+                        "category": "Science",
+                        "era": "2008 \u2013 Present",
+                        "lat": 46.233,
+                        "lng": 6.0557,
+                        "summary_short": "The Large Hadron Collider (LHC) at CERN is the world's largest high-energy particle accelerator, built in a 27..."
+            },
+            {
+                        "id": "discovery-of-penicillin",
+                        "title": "Discovery of Penicillin",
+                        "category": "Science",
+                        "era": "1928 \u2013 Present",
+                        "lat": 51.5147,
+                        "lng": -0.1748,
+                        "summary_short": "The accidental discovery of penicillin by Alexander Fleming marked the beginning of modern antibiotics, saving..."
+            },
+            {
+                        "id": "human-neuroscience",
+                        "title": "Human Neuroscience",
+                        "category": "Science",
+                        "era": "1890 \u2013 Present",
+                        "lat": 40.4168,
+                        "lng": -3.7038,
+                        "summary_short": "Neuroscience explores the structure and function of the brain and nervous system. Santiago Ram\u00f3n y Cajal's neu..."
+            },
+            {
+                        "id": "greek-philosophy",
+                        "title": "Greek Philosophy",
+                        "category": "Art & Culture",
+                        "era": "600 BCE \u2013 300 BCE",
+                        "lat": 37.9838,
+                        "lng": 23.7275,
+                        "summary_short": "Classical Greek philosophy in Athens laid the foundational framework of Western rational thought, political et..."
+            },
+            {
+                        "id": "baroque-music-&-bach",
+                        "title": "Baroque Music & Bach",
+                        "category": "Art & Culture",
+                        "era": "1600 \u2013 1750",
+                        "lat": 51.3397,
+                        "lng": 12.3731,
+                        "summary_short": "Baroque music brought complex counterpoint, fugal polyphony, and opera to Western classical music, defined by ..."
+            },
+            {
+                        "id": "surrealism-&-dal\u00ed",
+                        "title": "Surrealism & Dal\u00ed",
+                        "category": "Art & Culture",
+                        "era": "1920 \u2013 1950",
+                        "lat": 48.8566,
+                        "lng": 2.3522,
+                        "summary_short": "Surrealism was an avant-garde cultural movement that sought to release the uninhibited imagery of the subconsc..."
+            },
+            {
+                        "id": "cinema-pioneers",
+                        "title": "Cinema Pioneers",
+                        "category": "Art & Culture",
+                        "era": "1895 \u2013 1930",
+                        "lat": 45.764,
+                        "lng": 4.8357,
+                        "summary_short": "The birth of motion pictures transformed global storytelling. Pioneers Auguste and Louis Lumi\u00e8re and illusioni..."
+            },
+            {
+                        "id": "transatlantic-voyages",
+                        "title": "Transatlantic Voyages",
+                        "category": "Trade & Exploration",
+                        "era": "1492 \u2013 1900s",
+                        "lat": 25.0343,
+                        "lng": -77.3963,
+                        "summary_short": "Oceanic transatlantic routes linked Afro-Eurasia with the Americas, sparking the Columbian Exchange of crops, ..."
+            },
+            {
+                        "id": "the-spice-trade",
+                        "title": "The Spice Trade",
+                        "category": "Trade & Exploration",
+                        "era": "1000 BCE \u2013 1700 CE",
+                        "lat": -4.5624,
+                        "lng": 129.9042,
+                        "summary_short": "The spice trade was a historical maritime network exchanging cinnamon, black pepper, and nutmeg between Asia, ..."
+            },
+            {
+                        "id": "antarctic-expeditions",
+                        "title": "Antarctic Expeditions",
+                        "category": "Trade & Exploration",
+                        "era": "1820 \u2013 Present",
+                        "lat": -75.2509,
+                        "lng": -0.0713,
+                        "summary_short": "Polar exploration of Earth's southernmost continent saw explorers brave extreme freezing environments, culmina..."
+            },
+            {
+                        "id": "deep-sea-exploration",
+                        "title": "Deep Sea Exploration",
+                        "category": "Trade & Exploration",
+                        "era": "1960 \u2013 Present",
+                        "lat": 11.3493,
+                        "lng": 142.1996,
+                        "summary_short": "Deep sea exploration uses pressurized submersibles to investigate Earth's deepest abyssal trenches and hydroth..."
+            },
+            {
+                        "id": "microsoft-encarta",
+                        "title": "Microsoft Encarta",
+                        "category": "Technology",
+                        "era": "1993 \u2013 2009",
+                        "lat": 47.6405,
+                        "lng": -122.1297,
+                        "summary_short": "Microsoft Encarta was a digital multimedia encyclopedia published by Microsoft from 1993 to 2009. Originally r..."
+            },
+            {
+                        "id": "the-silk-road",
+                        "title": "The Silk Road",
+                        "category": "Trade & Exploration",
+                        "era": "130 BCE \u2013 1453 CE",
+                        "lat": 34.3416,
+                        "lng": 108.9398,
+                        "summary_short": "The Silk Road was a network of Eurasian trade routes active from the second century BCE until the mid-15th cen..."
+            },
+            {
+                        "id": "byzantine-empire",
+                        "title": "Byzantine Empire",
+                        "category": "History",
+                        "era": "330 CE \u2013 1453 CE",
+                        "lat": 41.0082,
+                        "lng": 28.9784,
+                        "summary_short": "The Byzantine Empire, also referred to as the Eastern Roman Empire, was the continuation of the Roman Empire p..."
+            },
+            {
+                        "id": "ancient-rome",
+                        "title": "Ancient Rome",
+                        "category": "History",
+                        "era": "753 BCE \u2013 476 CE",
+                        "lat": 41.9028,
+                        "lng": 12.4964,
+                        "summary_short": "Ancient Rome evolved from an iron-age agrarian settlement on the Italian Peninsula into one of the largest emp..."
+            },
+            {
+                        "id": "ancient-persia",
+                        "title": "Ancient Persia",
+                        "category": "History",
+                        "era": "550 BCE \u2013 330 BCE",
+                        "lat": 29.9344,
+                        "lng": 52.8911,
+                        "summary_short": "The Achaemenid Empire, also known as the First Persian Empire, was an ancient Iranian empire founded by Cyrus ..."
+            },
+            {
+                        "id": "age-of-discovery",
+                        "title": "Age of Discovery",
+                        "category": "Trade & Exploration",
+                        "era": "1400 \u2013 1600",
+                        "lat": 38.7223,
+                        "lng": -9.1393,
+                        "summary_short": "The Age of Discovery was a period of extensive overseas exploration driven by European powers seeking new trad..."
+            },
+            {
+                        "id": "renaissance-florence",
+                        "title": "Renaissance Florence",
+                        "category": "Art & Culture",
+                        "era": "1300 \u2013 1600",
+                        "lat": 43.7696,
+                        "lng": 11.2558,
+                        "summary_short": "Florence is widely regarded as the birthplace of the Renaissance, a fervent period of European cultural, artis..."
+            },
+            {
+                        "id": "industrial-revolution",
+                        "title": "Industrial Revolution",
+                        "category": "Technology",
+                        "era": "1760 \u2013 1840",
+                        "lat": 53.4808,
+                        "lng": -2.2426,
+                        "summary_short": "The Industrial Revolution marked the transition from agrarian, handicraft economies to machine-driven industri..."
+            },
+            {
+                        "id": "ancient-egypt",
+                        "title": "Ancient Egypt",
+                        "category": "History",
+                        "era": "3100 BCE \u2013 30 BCE",
+                        "lat": 29.9792,
+                        "lng": 31.1342,
+                        "summary_short": "Ancient Egypt was a civilization of ancient North Africa along the lower reaches of the Nile River. Famous for..."
+            },
+            {
+                        "id": "space-exploration",
+                        "title": "Space Exploration",
+                        "category": "Science",
+                        "era": "1957 \u2013 Present",
+                        "lat": 28.5721,
+                        "lng": -80.648,
+                        "summary_short": "Space Exploration is the discovery and exploration of celestial structures in outer space by means of evolving..."
+            },
+            {
+                        "id": "quantum-physics",
+                        "title": "Quantum Physics",
+                        "category": "Science",
+                        "era": "1900 \u2013 Present",
+                        "lat": 52.52,
+                        "lng": 13.405,
+                        "summary_short": "Quantum Mechanics is a fundamental theory in physics that provides a description of the physical properties of..."
+            },
+            {
+                        "id": "silicon-valley",
+                        "title": "Silicon Valley",
+                        "category": "Technology",
+                        "era": "1939 \u2013 Present",
+                        "lat": 37.3875,
+                        "lng": -122.0575,
+                        "summary_short": "Silicon Valley is a region in Northern California that serves as a global center for high technology and innov..."
+            },
+            {
+                        "id": "artificial-intelligence",
+                        "title": "Artificial Intelligence",
+                        "category": "Technology",
+                        "era": "1956 \u2013 Present",
+                        "lat": 43.7001,
+                        "lng": -72.2894,
+                        "summary_short": "Artificial intelligence (AI) is intelligence demonstrated by machines, as opposed to the natural intelligence ..."
+            },
+            {
+                        "id": "impressionism",
+                        "title": "Impressionism",
+                        "category": "Art & Culture",
+                        "era": "1860s \u2013 1890s",
+                        "lat": 48.8606,
+                        "lng": 2.3376,
+                        "summary_short": "Impressionism is a 19th-century art movement characterized by relatively small, thin, yet visible brush stroke..."
+            },
+            {
+                        "id": "dna-structure",
+                        "title": "DNA Structure",
+                        "category": "Science",
+                        "era": "1953 \u2013 Present",
+                        "lat": 52.2053,
+                        "lng": 0.1218,
+                        "summary_short": "Deoxyribonucleic acid (DNA) is a polymer composed of two polynucleotide chains that coil around each other to ..."
+            },
+            {
+                        "id": "world-war-ii",
+                        "title": "World War II",
+                        "category": "History",
+                        "era": "1939 \u2013 1945",
+                        "lat": 52.52,
+                        "lng": 13.405,
+                        "summary_short": "World War II was a global conflict that lasted from 1939 to 1945. It involved the vast majority of the world's..."
+            },
+            {
+                        "id": "the-internet",
+                        "title": "The Internet",
+                        "category": "Technology",
+                        "era": "1969 \u2013 Present",
+                        "lat": 38.8951,
+                        "lng": -77.0364,
+                        "summary_short": "The Internet is the global system of interconnected computer networks that uses the Internet protocol suite (T..."
+            },
+            {
+                        "id": "the-beatles",
+                        "title": "The Beatles",
+                        "category": "Art & Culture",
+                        "era": "1960 \u2013 1970",
+                        "lat": 53.4084,
+                        "lng": -2.9916,
+                        "summary_short": "The Beatles were an English rock band formed in Liverpool in 1960. Comprising John Lennon, Paul McCartney, Geo..."
+            },
+            {
+                        "id": "cyberpunk",
+                        "title": "Cyberpunk",
+                        "category": "Art & Culture",
+                        "era": "1980s \u2013 Present",
+                        "lat": 35.6762,
+                        "lng": 139.6503,
+                        "summary_short": "Cyberpunk is a subgenre of science fiction in a dystopian futuristic setting that tends to focus on a 'combina..."
+            }
+]);
     }
 
     /**

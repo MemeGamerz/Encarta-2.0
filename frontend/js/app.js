@@ -25,6 +25,7 @@ async function initApp() {
 
     // 2. Setup Header Controls & Sliders
     setupHeaderControls();
+    setupStarfield();
     setupReaderPanelControls();
     setupWindowControlButtons();
 
@@ -90,10 +91,29 @@ async function loadArticle(topicTitle, wikiQuery = "") {
         currentArticleData = data;
 
 
+        // CRT Flicker effect
+        if (panel) {
+            panel.classList.remove("crt-flicker-active");
+            void panel.offsetWidth; // Trigger DOM reflow to restart animation
+            panel.classList.add("crt-flicker-active");
+        }
+
         // Render Article Details
         if (titleEl) titleEl.textContent = data.title;
         if (eraEl) eraEl.textContent = `ERA: ${data.era}`;
-        if (summaryEl) summaryEl.textContent = data.summary;
+        
+        // Typewriter Effect for Summary
+        if (summaryEl) {
+            summaryEl.textContent = "";
+            let i = 0;
+            const text = data.summary;
+            if (window.typewriterInterval) clearInterval(window.typewriterInterval);
+            window.typewriterInterval = setInterval(() => {
+                summaryEl.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) clearInterval(window.typewriterInterval);
+            }, 10);
+        }
         
         // Dynamically update the browser tab title
         document.title = `Encarta 2.0 - ${data.title}`;
@@ -168,17 +188,64 @@ function setupHeaderControls() {
     const volumeSlider = document.getElementById("volume-slider");
     const rotationSlider = document.getElementById("rotation-slider");
 
+    const autocompleteList = document.getElementById("search-autocomplete");
+
     if (searchBtn && searchInput) {
-        const executeSearch = () => {
-            const query = searchInput.value.trim();
+        const executeSearch = (queryOverride) => {
+            const query = queryOverride || searchInput.value.trim();
             if (query) {
+                if (autocompleteList) autocompleteList.classList.add("hidden");
                 loadArticle(query);
             }
         };
-        searchBtn.onclick = executeSearch;
+        searchBtn.onclick = () => executeSearch();
+        
         searchInput.onkeydown = (e) => {
             if (e.key === "Enter") executeSearch();
         };
+
+        if (autocompleteList) {
+            searchInput.oninput = (e) => {
+                const val = e.target.value.toLowerCase().trim();
+                autocompleteList.innerHTML = "";
+                
+                if (!val) {
+                    autocompleteList.classList.add("hidden");
+                    return;
+                }
+
+                // Filter local nodes data
+                if (!spatialGraph || !spatialGraph.nodesData) return;
+                
+                const matches = spatialGraph.nodesData.filter(n => n.title.toLowerCase().includes(val));
+                
+                if (matches.length > 0) {
+                    matches.slice(0, 5).forEach(m => {
+                        const li = document.createElement("li");
+                        li.textContent = m.title;
+                        li.onmousedown = () => { // mousedown fires before blur
+                            searchInput.value = m.title;
+                            executeSearch(m.title);
+                        };
+                        autocompleteList.appendChild(li);
+                    });
+                    autocompleteList.classList.remove("hidden");
+                } else {
+                    autocompleteList.classList.add("hidden");
+                }
+            };
+
+            searchInput.onblur = () => {
+                // Delay hiding slightly so mousedown on list item can fire
+                setTimeout(() => autocompleteList.classList.add("hidden"), 150);
+            };
+            
+            searchInput.onfocus = () => {
+                if (searchInput.value.trim() && autocompleteList.children.length > 0) {
+                    autocompleteList.classList.remove("hidden");
+                }
+            };
+        }
     }
 
     if (addNodeBtn) {
@@ -268,6 +335,62 @@ function setupHeaderControls() {
             openMindMazeModal();
         };
     }
+}
+
+/**
+ * Setup Dynamic Starfield Background
+ */
+function setupStarfield() {
+    const canvas = document.getElementById("starfield");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let width, height;
+    let stars = [];
+
+    const resize = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initStars();
+    };
+
+    const initStars = () => {
+        stars = [];
+        const numStars = Math.floor((width * height) / 3000); // adjust density
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                z: Math.random() * 2,
+                o: Math.random() * 0.8 + 0.2
+            });
+        }
+    };
+
+    const animate = () => {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "white";
+        for (let i = 0; i < stars.length; i++) {
+            let s = stars[i];
+            ctx.globalAlpha = s.o;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.z, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Move star
+            s.x -= (s.z * 0.2); // Parallax speed based on depth
+            if (s.x < 0) {
+                s.x = width;
+                s.y = Math.random() * height;
+            }
+        }
+        requestAnimationFrame(animate);
+    };
+
+    window.addEventListener("resize", resize);
+    resize();
+    animate();
 }
 
 /**
