@@ -6,8 +6,10 @@
 class RetroAudioEngine {
     constructor() {
         this.ctx = null;
+        // Default to unmuted with rich 0.8 volume
         this.isMuted = localStorage.getItem("encarta_muted") === "true";
-        this.masterVolume = parseFloat(localStorage.getItem("encarta_volume") || "0.6");
+        const savedVol = localStorage.getItem("encarta_volume");
+        this.masterVolume = savedVol !== null ? parseFloat(savedVol) : 0.8;
     }
 
     init() {
@@ -20,20 +22,29 @@ class RetroAudioEngine {
         if (this.ctx && this.ctx.state === "suspended") {
             this.ctx.resume();
         }
+        return this.ctx;
     }
 
     setVolume(val) {
         this.masterVolume = Math.max(0, Math.min(1, parseFloat(val)));
         localStorage.setItem("encarta_volume", this.masterVolume.toString());
+        if (this.isMuted && this.masterVolume > 0) {
+            this.isMuted = false;
+            localStorage.setItem("encarta_muted", "false");
+        }
     }
 
     toggleMute() {
         this.isMuted = !this.isMuted;
         localStorage.setItem("encarta_muted", this.isMuted.toString());
+        if (!this.isMuted) {
+            this.init();
+        }
         return this.isMuted;
     }
 
-    createGainNode(volume = 0.15) {
+    createGainNode(volume = 0.3) {
+        this.init();
         if (!this.ctx) return null;
         const gain = this.ctx.createGain();
         gain.gain.setValueAtTime(volume * this.masterVolume, this.ctx.currentTime);
@@ -45,21 +56,23 @@ class RetroAudioEngine {
         this.init();
         if (!this.ctx) return;
 
+        const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
-        const gain = this.createGainNode(0.12);
+        const gain = this.createGainNode(0.28);
         if (!gain) return;
 
         osc.type = "square";
-        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.04);
+        osc.frequency.setValueAtTime(900, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.05);
 
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.28 * this.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
 
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.04);
+        osc.start(now);
+        osc.stop(now + 0.05);
     }
 
     playStartupChime() {

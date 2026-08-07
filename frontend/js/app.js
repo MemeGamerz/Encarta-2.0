@@ -37,12 +37,17 @@ async function initApp() {
         }
     }, 600);
 
-    // 4. Play startup chime on first user click
-    const handleFirstClick = () => {
+    // 4. Ensure WebAudio unlocks on first user interaction gesture (pointerdown, click, touch, keydown)
+    const unlockAudio = () => {
+        soundEngine.init();
         soundEngine.playStartupChime();
-        window.removeEventListener("click", handleFirstClick);
+        window.removeEventListener("pointerdown", unlockAudio);
+        window.removeEventListener("keydown", unlockAudio);
+        window.removeEventListener("click", unlockAudio);
     };
-    window.addEventListener("click", handleFirstClick);
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    window.addEventListener("keydown", unlockAudio, { once: true });
+    window.addEventListener("click", unlockAudio, { once: true });
 }
 
 /**
@@ -323,9 +328,13 @@ function setupHeaderControls() {
 
     // Sound Mute Toggle
     if (soundBtn) {
+        soundBtn.textContent = soundEngine.isMuted ? "🔇 Muted" : "🔊 Sound ON";
         soundBtn.onclick = () => {
             const muted = soundEngine.toggleMute();
             soundBtn.textContent = muted ? "🔇 Muted" : "🔊 Sound ON";
+            if (!muted) {
+                soundEngine.playClick();
+            }
         };
     }
 
