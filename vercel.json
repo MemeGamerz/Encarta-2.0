@@ -24,8 +24,18 @@
       "dest": "/frontend/js/$1"
     },
     {
-      "src": "/(.*)",
+      "src": "/(index\\.html)?$",
       "dest": "/frontend/index.html"
+    },
+    {
+      "src": "/404(\\.html)?",
+      "dest": "/frontend/404.html",
+      "status": 404
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/404.html",
+      "status": 404
     }
   ]
 }
