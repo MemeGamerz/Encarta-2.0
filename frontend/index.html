@@ -32,33 +32,36 @@
 
     <!-- Application Top Navigation Bar -->
     <header id="app-header" class="win95-outset glass-panel">
-        <div class="brand-title">
-            <span class="globe-icon">🌐</span>
-            <span>ENCARTA 2.0</span>
+        <div class="header-brand-section">
+            <div class="brand-title">
+                <span class="globe-icon">🌐</span>
+                <span>ENCARTA 2.0</span>
+            </div>
         </div>
 
-        <!-- Search Box -->
+        <!-- Search & Discovery Action Cluster -->
         <div class="search-box flex items-center relative">
             <input type="text" id="search-input" class="search-input" placeholder="Search topic (e.g. Rome)..." autocomplete="off">
             <ul id="search-autocomplete" class="autocomplete-dropdown hidden"></ul>
             <button id="search-btn" class="retro-btn retro-btn-accent ml-2">Search 🔍</button>
+            <button id="random-dive-btn" class="retro-btn retro-btn-gold ml-2" title="Jump to Random Knowledge Node (Hotkey: R)">🎲 Surprise Me</button>
             <button id="add-node-btn" class="retro-btn ml-2" title="Generate New Node via Gemma AI">Add Node ⚡</button>
         </div>
 
-        <!-- Category Filters -->
+        <!-- Category Filters Carousel Bar -->
         <div class="filter-bar">
-            <button class="filter-pill active" data-category="All">All</button>
-            <button class="filter-pill" data-category="History">History</button>
-            <button class="filter-pill" data-category="Technology">Tech</button>
-            <button class="filter-pill" data-category="Science">Science</button>
-            <button class="filter-pill" data-category="Art & Culture">Art</button>
+            <button class="filter-pill active" data-category="All" title="All Nodes (Key: 1)">All</button>
+            <button class="filter-pill" data-category="History" title="History (Key: 2)">History</button>
+            <button class="filter-pill" data-category="Technology" title="Tech (Key: 3)">Tech</button>
+            <button class="filter-pill" data-category="Science" title="Science (Key: 4)">Science</button>
+            <button class="filter-pill" data-category="Art & Culture" title="Art (Key: 5)">Art</button>
         </div>
 
-        <!-- Interactive Sliders (Volume & 3D Rotation Speed) -->
+        <!-- Interactive Header Audio & 3D Controls -->
         <div class="header-controls">
             <div class="slider-group">
                 <span>🔊</span>
-                <input type="range" id="volume-slider" class="retro-slider" min="0" max="1" step="0.05" value="0.6" title="Master Audio Volume">
+                <input type="range" id="volume-slider" class="retro-slider" min="0" max="1" step="0.05" value="0.8" title="Master Audio Volume">
             </div>
 
             <div class="slider-group">
@@ -70,7 +73,7 @@
                 🏰 MindMaze
             </button>
             <button id="sound-toggle-btn" class="retro-btn">
-                🔊 Mute/Unmute
+                🔊 Sound ON
             </button>
         </div>
     </header>
@@ -78,18 +81,46 @@
     <!-- Main WebGL 3D Globe Spatial Canvas (Component A) -->
     <main id="globe-container"></main>
 
-    <!-- Encarta 2.0 Sliding Reader Panel (Component B) -->
-    <aside id="reader-panel" class="win95-outset glass-panel">
+    <!-- Mobile Floating Action Pill to reopen brief anytime -->
+    <button id="mobile-open-brief-btn" class="mobile-brief-fab retro-btn retro-btn-accent hidden">
+        📖 View Knowledge Brief
+    </button>
+
+    <!-- Encarta 2.0 Floating Hovering Reader Panel (Component B & Mobile Bottom Sheet) -->
+    <aside id="reader-panel" class="win95-outset glass-panel reader-floating-card">
+        <div id="bottom-sheet-handle" class="bottom-sheet-handle">
+            <span class="handle-bar"></span>
+        </div>
         <div class="panel-header">
             <div class="panel-header-title">
                 <span>📖 Encarta 2.0 Knowledge Brief</span>
             </div>
-            <button id="close-panel-btn" class="win-btn close-btn">X</button>
+            <div class="window-controls flex items-center gap-1">
+                <button id="close-panel-btn" class="win-btn close-btn" title="Close Panel (Esc)">X</button>
+            </div>
         </div>
         <div class="panel-body">
+            <!-- Article Header & Metadata -->
             <div>
                 <h1 id="reader-title" class="article-title">Ancient Rome</h1>
                 <div id="reader-era" class="article-era-badge">ERA: 753 BCE – 476 CE</div>
+            </div>
+
+            <!-- Dedicated Retro Audio Narration Bar -->
+            <div class="audio-narration-bar win95-inset">
+                <button id="speak-summary-btn" class="retro-btn retro-btn-accent speech-play-btn" title="Synthesize Voice Narration">
+                    <span class="speech-btn-icon">🎙️</span>
+                    <span id="speak-btn-text">Read Aloud</span>
+                </button>
+                <div id="speech-indicator" class="speech-indicator hidden">
+                    <div class="speech-bars">
+                        <span class="bar bar-1"></span>
+                        <span class="bar bar-2"></span>
+                        <span class="bar bar-3"></span>
+                        <span class="bar bar-4"></span>
+                    </div>
+                    <span class="speech-status-text font-mono text-xs text-amber-300">Narrating Archive...</span>
+                </div>
             </div>
 
             <p id="reader-summary" class="article-summary">
@@ -199,7 +230,9 @@
             <div class="mindmaze-hud">
                 <span id="mm-score">SCORE: 0</span>
                 <span id="mm-topic">TOPIC: Ancient Rome</span>
-                <span id="mm-doors">DOORS UNLOCKED: 0/3</span>
+                <span id="mm-doors">DOORS: 0/5</span>
+                <span id="mm-timer">⏱️ 00:00</span>
+                <span id="mm-streak" class="streak-badge">⚡ 1x STREAK</span>
             </div>
 
             <!-- Canvas 2D Game Renderer -->

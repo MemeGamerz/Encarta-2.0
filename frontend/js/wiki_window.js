@@ -5,7 +5,7 @@ import { soundEngine } from "./audio.js";
  */
 
 let windowCount = 0;
-let highestZIndex = 200;
+let highestZIndex = 800;
 let activeDragWindow = null;
 let dragOffsetX = 0;
 let dragOffsetY = 0;

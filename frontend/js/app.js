@@ -9,6 +9,7 @@ import { mindmaze, openMindMazeModal, closeMindMazeModal } from "./mindmaze.js";
 
 let spatialGraph = null;
 let currentArticleData = null;
+let isSpeaking = false;
 
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
@@ -23,11 +24,13 @@ async function initApp() {
     });
     await spatialGraph.init();
 
-    // 2. Setup Header Controls & Sliders
+    // 2. Setup Header Controls, Hotkeys & UI Engines
     setupHeaderControls();
     setupStarfield();
     setupReaderPanelControls();
     setupWindowControlButtons();
+    setupKeyboardShortcuts();
+    setupMobileBottomSheetGestures();
 
     // 3. Initial Seed Article Load ("Microsoft Encarta")
     loadArticle("Microsoft Encarta");
@@ -95,6 +98,12 @@ async function loadArticle(topicTitle, wikiQuery = "") {
         const data = await res.json();
         currentArticleData = data;
 
+        // Open Reader Panel and hide mobile FAB if open
+        if (panel) {
+            panel.classList.add("open");
+            const mobileFab = document.getElementById("mobile-open-brief-btn");
+            if (mobileFab) mobileFab.classList.add("hidden");
+        }
 
         // CRT Flicker effect
         if (panel) {
@@ -299,6 +308,14 @@ function setupHeaderControls() {
         }
     }
 
+    // Surprise Me Random Discovery Button
+    const randomBtn = document.getElementById("random-dive-btn");
+    if (randomBtn) {
+        randomBtn.onclick = () => {
+            triggerSurpriseMe();
+        };
+    }
+
     // Category Filter Pills
     document.querySelectorAll(".filter-pill").forEach(pill => {
         pill.onclick = () => {
@@ -344,6 +361,57 @@ function setupHeaderControls() {
             openMindMazeModal();
         };
     }
+}
+
+/**
+ * Trigger Random Dive / Surprise Me
+ */
+function triggerSurpriseMe() {
+    if (!spatialGraph || !spatialGraph.nodesData || spatialGraph.nodesData.length === 0) return;
+    soundEngine.playNodeBirthChime();
+
+    const currentTitle = currentArticleData ? currentArticleData.title.toLowerCase() : "";
+    const available = spatialGraph.nodesData.filter(n => n.title.toLowerCase() !== currentTitle);
+    const pool = available.length > 0 ? available : spatialGraph.nodesData;
+    const randomNode = pool[Math.floor(Math.random() * pool.length)];
+
+    if (randomNode) {
+        spatialGraph.focusTopicByTitle(randomNode.title);
+        loadArticle(randomNode.title);
+    }
+}
+
+/**
+ * Power-User Global Keyboard Shortcuts
+ */
+function setupKeyboardShortcuts() {
+    window.addEventListener("keydown", (e) => {
+        // Ignore hotkeys when typing in search or input fields
+        const tag = e.target.tagName.toLowerCase();
+        if (tag === "input" || tag === "textarea") return;
+
+        if (e.code === "Space") {
+            e.preventDefault();
+            if (spatialGraph) {
+                spatialGraph.autoRotate = !spatialGraph.autoRotate;
+                soundEngine.playClick();
+            }
+        } else if (e.key === "r" || e.key === "R") {
+            triggerSurpriseMe();
+        } else if (e.key === "m" || e.key === "M") {
+            openMindMazeModal();
+        } else if (e.key === "Escape") {
+            document.getElementById("reader-panel")?.classList.remove("open");
+            closeMindMazeModal();
+            document.getElementById("add-node-dialog-overlay")?.classList.add("hidden");
+        } else if (["1", "2", "3", "4", "5"].includes(e.key)) {
+            const idx = parseInt(e.key) - 1;
+            const pills = document.querySelectorAll(".filter-pill");
+            if (pills[idx]) {
+                pills[idx].click();
+            }
+        }
+    });
 }
 
 /**
@@ -403,18 +471,80 @@ function setupStarfield() {
 }
 
 /**
- * Setup Reader Panel Action Buttons
+ * Setup Reader Panel Action Buttons & Audio Synthesizer Player Bar
  */
 function setupReaderPanelControls() {
     const closePanelBtn = document.getElementById("close-panel-btn");
+    const speakBtn = document.getElementById("speak-summary-btn");
+    const speakBtnText = document.getElementById("speak-btn-text");
+    const speechIndicator = document.getElementById("speech-indicator");
     const wikiBtn = document.getElementById("open-wiki-btn");
     const mindmazeReaderBtn = document.getElementById("reader-mindmaze-btn");
+    const mobileBriefFab = document.getElementById("mobile-open-brief-btn");
 
     if (closePanelBtn) {
         closePanelBtn.onclick = () => {
             soundEngine.playClick();
+            stopSpeech();
             document.getElementById("reader-panel").classList.remove("open");
+            if (window.innerWidth <= 768 && mobileBriefFab) {
+                mobileBriefFab.classList.remove("hidden");
+            }
         };
+    }
+
+    if (mobileBriefFab) {
+        mobileBriefFab.onclick = () => {
+            soundEngine.playWindowOpen();
+            const panel = document.getElementById("reader-panel");
+            if (panel) panel.classList.add("open");
+            mobileBriefFab.classList.add("hidden");
+        };
+    }
+
+    if (speakBtn) {
+        speakBtn.onclick = () => {
+            if (!window.speechSynthesis) return;
+
+            if (isSpeaking) {
+                stopSpeech();
+            } else {
+                startSpeech();
+            }
+        };
+    }
+
+    function startSpeech() {
+        if (!currentArticleData || !currentArticleData.summary) return;
+        window.speechSynthesis.cancel();
+        soundEngine.playNodeBirthChime();
+
+        const utterance = new SpeechSynthesisUtterance(currentArticleData.summary);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.05;
+
+        utterance.onstart = () => {
+            isSpeaking = true;
+            if (speakBtnText) speakBtnText.textContent = "Stop";
+            if (speechIndicator) speechIndicator.classList.remove("hidden");
+        };
+
+        utterance.onend = () => {
+            stopSpeech();
+        };
+
+        utterance.onerror = () => {
+            stopSpeech();
+        };
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function stopSpeech() {
+        window.speechSynthesis?.cancel();
+        isSpeaking = false;
+        if (speakBtnText) speakBtnText.textContent = "Read Aloud";
+        if (speechIndicator) speechIndicator.classList.add("hidden");
     }
 
     if (wikiBtn) {
@@ -429,6 +559,79 @@ function setupReaderPanelControls() {
             openMindMazeModal();
         };
     }
+}
+
+/**
+ * Real-Time 60 FPS Drag Handlers for Mobile Bottom Sheet
+ */
+function setupMobileBottomSheetGestures() {
+    const handle = document.getElementById("bottom-sheet-handle");
+    const panelHeader = document.querySelector("#reader-panel .panel-header");
+    const panel = document.getElementById("reader-panel");
+    if (!panel) return;
+
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    const onDragStart = (clientY) => {
+        if (window.innerWidth > 768) return;
+        startY = clientY;
+        currentY = clientY;
+        isDragging = true;
+        panel.classList.add("dragging");
+    };
+
+    const onDragMove = (clientY) => {
+        if (!isDragging) return;
+        currentY = clientY;
+        const delta = Math.max(0, currentY - startY);
+        // Direct CSS transform with real-time hardware acceleration
+        panel.style.transform = `translateY(${delta}px)`;
+    };
+
+    const onDragEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        panel.classList.remove("dragging");
+        const delta = currentY - startY;
+        panel.style.transform = "";
+
+        if (delta > 70) {
+            panel.classList.remove("open");
+            soundEngine.playWindowClose();
+            const mobileBriefFab = document.getElementById("mobile-open-brief-btn");
+            if (mobileBriefFab) mobileBriefFab.classList.remove("hidden");
+        } else {
+            panel.classList.add("open");
+        }
+    };
+
+    const dragHandles = [handle, panelHeader].filter(Boolean);
+    dragHandles.forEach(target => {
+        target.addEventListener("touchstart", (e) => {
+            onDragStart(e.touches[0].clientY);
+        }, { passive: true });
+
+        target.addEventListener("mousedown", (e) => {
+            onDragStart(e.clientY);
+        });
+    });
+
+    window.addEventListener("touchmove", (e) => {
+        if (isDragging) {
+            onDragMove(e.touches[0].clientY);
+        }
+    }, { passive: true });
+
+    window.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+            onDragMove(e.clientY);
+        }
+    });
+
+    window.addEventListener("touchend", onDragEnd);
+    window.addEventListener("mouseup", onDragEnd);
 }
 
 /**

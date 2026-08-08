@@ -18,6 +18,9 @@ class MindMazeGame {
         this.score = 0;
         this.doorsUnlocked = 0;
         this.totalDoors = 5;
+        this.streak = 1;
+        this.startTime = null;
+        this.timerInterval = null;
 
         this.questions = [];
         this.currentDoorQuestionIndex = 0;
@@ -141,6 +144,18 @@ class MindMazeGame {
         }
 
         this.countTotalDoors();
+        // Start Speedrun Timer
+        this.startTime = Date.now();
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        this.timerInterval = setInterval(() => {
+            if (this.isVictory) return;
+            const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+            const mins = String(Math.floor(elapsed / 60)).padStart(2, "0");
+            const secs = String(elapsed % 60).padStart(2, "0");
+            const timerEl = document.getElementById("mm-timer");
+            if (timerEl) timerEl.textContent = `⏱️ ${mins}:${secs}`;
+        }, 1000);
+
         this.startLoop();
     }
 
@@ -175,6 +190,7 @@ class MindMazeGame {
         this.generateRandomMaze();
         this.player = { x: 1, y: 1, renderX: 1, renderY: 1, dir: "down" };
         this.score = 0;
+        this.streak = 1;
         this.doorsUnlocked = 0;
         this.currentDoorQuestionIndex = 0;
         this.particles = [];
@@ -280,8 +296,9 @@ class MindMazeGame {
 
         if (selectedIndex === q.correct_index) {
             soundEngine.playDoorFanfare();
-            this.score += 150;
+            this.score += 150 * this.streak;
             this.doorsUnlocked += 1;
+            this.streak += 1;
 
             if (this.pendingDoorTile) {
                 this.spawnParticleBurst(
@@ -297,8 +314,10 @@ class MindMazeGame {
             this.updateHUD();
         } else {
             soundEngine.playBuzzer();
+            this.streak = 1;
             hintBox.textContent = `💡 Hint: ${q.hint}`;
             hintBox.classList.remove("hidden");
+            this.updateHUD();
         }
     }
 
@@ -334,13 +353,18 @@ class MindMazeGame {
     }
 
     updateHUD() {
-        const hudScore = document.getElementById("mm-score");
-        const hudDoors = document.getElementById("mm-doors");
-        const hudTopic = document.getElementById("mm-topic");
+        const scoreEl = document.getElementById("mm-score");
+        const topicEl = document.getElementById("mm-topic");
+        const doorsEl = document.getElementById("mm-doors");
+        const streakEl = document.getElementById("mm-streak");
 
-        if (hudScore) hudScore.textContent = `SCORE: ${this.score}`;
-        if (hudDoors) hudDoors.textContent = `DOORS UNLOCKED: ${this.doorsUnlocked}/${this.totalDoors}`;
-        if (hudTopic) hudTopic.textContent = `TOPIC: ${this.activeArticleTopic}`;
+        if (scoreEl) scoreEl.textContent = `SCORE: ${this.score}`;
+        if (topicEl) topicEl.textContent = `TOPIC: ${this.activeArticleTopic}`;
+        if (doorsEl) doorsEl.textContent = `DOORS: ${this.doorsUnlocked}/${this.totalDoors}`;
+        if (streakEl) {
+            streakEl.textContent = `⚡ ${this.streak}x STREAK`;
+            streakEl.style.color = this.streak > 1 ? "#FFB703" : "#94A3B8";
+        }
     }
 
     startLoop() {
@@ -412,6 +436,18 @@ class MindMazeGame {
         const kx = this.player.renderX * this.tileSize;
         const ky = this.player.renderY * this.tileSize;
 
+        // Radial Torchlight Fog-of-War effect
+        const torchGrad = this.ctx.createRadialGradient(
+            kx + this.tileSize / 2, ky + this.tileSize / 2, 20,
+            kx + this.tileSize / 2, ky + this.tileSize / 2, 140
+        );
+        torchGrad.addColorStop(0, "rgba(255, 183, 3, 0.18)");
+        torchGrad.addColorStop(0.6, "rgba(0, 168, 150, 0.08)");
+        torchGrad.addColorStop(1, "rgba(2, 6, 23, 0.65)");
+
+        this.ctx.fillStyle = torchGrad;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
         this.ctx.fillStyle = "#00A896";
         this.ctx.beginPath();
         this.ctx.arc(kx + this.tileSize / 2, ky + this.tileSize / 2, this.tileSize / 2 - 4, 0, Math.PI * 2);
@@ -458,6 +494,7 @@ export function openMindMazeModal() {
     if (modal) {
         modal.classList.remove("hidden");
         modal.classList.add("window-animate-open");
+        modal.style.zIndex = "850";
         bringToFront(modal);
         mindmaze.init();
     }
