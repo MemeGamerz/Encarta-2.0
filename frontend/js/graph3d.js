@@ -577,80 +577,124 @@ export class SpatialGraphController {
     }
 
     /**
-     * Render custom 3D Sprite texture with 100% transparent background (NO black box)
+     * Render custom 3D Node with mathematically exact circular hitbox matching the glow area
      */
     createNodeSprite(node) {
         if (!window.THREE) return null;
 
         const isSelected = this.selectedNode && (this.selectedNode.id === node.id || this.selectedNode.title === node.title);
 
+        const group = new THREE.Group();
+        group.__data = node;
+
+        // 1. Exact Circular Hitbox Sphere (Interactive Mesh matching circular glow boundary)
+        const hitRadius = isSelected ? 8.5 : 7.0;
+        const hitGeo = new THREE.SphereGeometry(hitRadius, 16, 16);
+        const hitMat = new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0,
+            depthWrite: false
+        });
+        const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+        hitMesh.__data = node;
+        group.add(hitMesh);
+        this.threeDisposables.push(hitGeo, hitMat);
+
+        // 2. High-Res Circular Badge & Soft Radial Glow Sprite
         const dpr = window.devicePixelRatio || 1;
-        const baseSize = 256;
+        const badgeSize = 128;
         
         const canvas = document.createElement("canvas");
-        canvas.width = baseSize * dpr;
-        canvas.height = baseSize * dpr;
+        canvas.width = badgeSize * dpr;
+        canvas.height = badgeSize * dpr;
         const ctx = canvas.getContext("2d");
-        
-        // Scale context so all following drawing operations use the original coordinate system
         ctx.scale(dpr, dpr);
 
-        ctx.clearRect(0, 0, baseSize, baseSize);
+        ctx.clearRect(0, 0, badgeSize, badgeSize);
 
-        const cx = 128;
-        const cy = 100;
+        const cx = badgeSize / 2;
+        const cy = badgeSize / 2;
 
         // Active Node Soft Radial Glow Aura
         if (isSelected) {
-            const glowGrad = ctx.createRadialGradient(cx, cy, 32, cx, cy, 65);
-            glowGrad.addColorStop(0, "rgba(255, 183, 3, 0.8)");
-            glowGrad.addColorStop(0.5, "rgba(0, 168, 150, 0.4)");
+            const glowGrad = ctx.createRadialGradient(cx, cy, 18, cx, cy, 58);
+            glowGrad.addColorStop(0, "rgba(255, 183, 3, 0.9)");
+            glowGrad.addColorStop(0.5, "rgba(0, 168, 150, 0.45)");
             glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
 
             ctx.fillStyle = glowGrad;
             ctx.beginPath();
-            ctx.arc(cx, cy, 65, 0, Math.PI * 2);
+            ctx.arc(cx, cy, 58, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            const glowGrad = ctx.createRadialGradient(cx, cy, 16, cx, cy, 48);
+            glowGrad.addColorStop(0, `${node.color}55`);
+            glowGrad.addColorStop(0.6, `${node.color}22`);
+            glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+            ctx.fillStyle = glowGrad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 48, 0, Math.PI * 2);
             ctx.fill();
         }
 
         // Inner Circle Badge
         ctx.fillStyle = isSelected ? "rgba(2, 6, 23, 0.95)" : "rgba(15, 23, 42, 0.88)";
         ctx.beginPath();
-        ctx.arc(cx, cy, 36, 0, Math.PI * 2);
+        ctx.arc(cx, cy, 26, 0, Math.PI * 2);
         ctx.fill();
 
         // Outer Ring Border
         ctx.strokeStyle = isSelected ? "#FFB703" : node.color;
-        ctx.lineWidth = isSelected ? 4.5 : 3;
+        ctx.lineWidth = isSelected ? 3.5 : 2.5;
         ctx.stroke();
 
         // Category Emoji Icon
-        ctx.font = "32px sans-serif";
+        ctx.font = "24px sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(node.icon, cx, cy);
 
-        // Title Label
-        ctx.fillStyle = isSelected ? "#FFB703" : "#F8F9FA";
-        ctx.font = isSelected ? "bold 18px 'Share Tech Mono', monospace" : "bold 15px 'Share Tech Mono', monospace";
-        ctx.fillText(node.title, cx, 180);
-
-        const texture = new THREE.CanvasTexture(canvas);
-        
-        const material = new THREE.SpriteMaterial({
-            map: texture,
+        const badgeTexture = new THREE.CanvasTexture(canvas);
+        const badgeMat = new THREE.SpriteMaterial({
+            map: badgeTexture,
             transparent: true,
-            depthWrite: false,
-            alphaTest: 0.01
+            depthWrite: false
         });
-        const sprite = new THREE.Sprite(material);
-        
-        this.threeDisposables.push(texture, material);
+        const badgeSprite = new THREE.Sprite(badgeMat);
+        const spriteScale = isSelected ? 22 : 18;
+        badgeSprite.scale.set(spriteScale, spriteScale, 1);
+        badgeSprite.__data = node;
+        group.add(badgeSprite);
+        this.threeDisposables.push(badgeTexture, badgeMat);
 
-        const spriteScale = isSelected ? 32 : 25;
-        sprite.scale.set(spriteScale, spriteScale, 1);
+        // 3. Crisp Text Label Sprite (placed directly below the circular badge)
+        const textCanvas = document.createElement("canvas");
+        textCanvas.width = 256 * dpr;
+        textCanvas.height = 48 * dpr;
+        const tCtx = textCanvas.getContext("2d");
+        tCtx.scale(dpr, dpr);
 
-        return sprite;
+        tCtx.fillStyle = isSelected ? "#FFB703" : "#F8F9FA";
+        tCtx.font = isSelected ? "bold 15px 'Share Tech Mono', monospace" : "bold 13px 'Share Tech Mono', monospace";
+        tCtx.textAlign = "center";
+        tCtx.textBaseline = "middle";
+        tCtx.fillText(node.title, 128, 24);
+
+        const textTexture = new THREE.CanvasTexture(textCanvas);
+        const textMat = new THREE.SpriteMaterial({
+            map: textTexture,
+            transparent: true,
+            depthWrite: false
+        });
+        const textSprite = new THREE.Sprite(textMat);
+        textSprite.scale.set(28, 6, 1);
+        textSprite.position.set(0, -11, 0);
+        textSprite.raycast = () => {}; // Text label does not intercept click/hover raycasts
+        group.add(textSprite);
+        this.threeDisposables.push(textTexture, textMat);
+
+        return group;
     }
 
     /**
@@ -665,6 +709,18 @@ export class SpatialGraphController {
         }));
     }
 
+    createNodeLabelHTML(node) {
+        if (!node || !node.title) return "";
+        const color = node.color || "#00A896";
+        return `
+            <div style="background: rgba(15, 23, 42, 0.96); border: 2px solid ${color}; padding: 8px 12px; font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #FFB703; box-shadow: 0 4px 20px rgba(0,0,0,0.95), 0 0 16px ${color}; border-radius: 4px; max-width: 260px; pointer-events: none;">
+                <div style="font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px;">${node.icon || '🏛️'} ${node.title}</div>
+                <div style="color: #00A896; font-size: 11px; margin-top: 2px;">${node.era || ''}</div>
+                <div style="color: #F8F9FA; font-size: 11px; margin-top: 4px; line-height: 1.4;">${node.summary_short || ''}</div>
+            </div>
+        `;
+    }
+
     renderGraph() {
         const container = document.getElementById(this.containerId);
         if (!window.ForceGraph3D) return;
@@ -673,13 +729,7 @@ export class SpatialGraphController {
             .graphData({ nodes: this.nodesData, links: this.cleanLinks() })
             .nodeId("id")
             .nodeThreeObject(node => this.createNodeSprite(node))
-            .nodeLabel(node => `
-                <div style="background: rgba(15, 23, 42, 0.95); border: 2px solid ${node.color}; padding: 8px 12px; font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #FFB703; box-shadow: 0 0 14px ${node.color};">
-                    <div style="font-weight: bold; font-size: 13px;">${node.icon} ${node.title}</div>
-                    <div style="color: #00A896; font-size: 11px;">${node.era}</div>
-                    <div style="color: #F8F9FA; font-size: 11px; margin-top: 4px;">${node.summary_short}</div>
-                </div>
-            `)
+            .nodeLabel(() => "")
             .linkDirectionalParticles(0)
             .linkThreeObject(link => {
                 const color = link.color || "#00A896";
@@ -729,7 +779,40 @@ export class SpatialGraphController {
             })
             .onNodeHover(node => {
                 container.style.cursor = node ? "pointer" : "default";
+                const tooltip = document.getElementById("globe-3d-tooltip");
+                if (node && tooltip) {
+                    const coords = this.graph.graph2ScreenCoords(node.x, node.y, node.z);
+                    if (coords && typeof coords.x === 'number') {
+                        tooltip.innerHTML = `
+                            <div style="font-weight: bold; font-size: 13px; color: #FFB703; display: flex; align-items: center; gap: 6px;">${node.icon || '🏛️'} ${node.title}</div>
+                            <div style="color: #00A896; font-size: 11px; margin-top: 2px;">${node.era || ''}</div>
+                            <div style="color: #F8F9FA; font-size: 11px; margin-top: 4px; line-height: 1.4;">${node.summary_short || ''}</div>
+                        `;
+                        tooltip.style.left = `${Math.min(window.innerWidth - 280, Math.max(10, coords.x))}px`;
+                        tooltip.style.top = `${Math.min(window.innerHeight - 120, Math.max(70, coords.y))}px`;
+                        tooltip.style.borderColor = node.color || '#00A896';
+                        tooltip.classList.remove("hidden");
+                    }
+                } else if (tooltip) {
+                    tooltip.classList.add("hidden");
+                }
             });
+
+        // Hide tooltip immediately when pointer leaves 3D globe or enters UI panels
+        container.addEventListener("mouseleave", () => {
+            const tooltip = document.getElementById("globe-3d-tooltip");
+            if (tooltip) tooltip.classList.add("hidden");
+        });
+
+        ["app-header", "reader-panel", "taskbar", "mindmaze-modal", "add-node-dialog-overlay"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener("mouseenter", () => {
+                    const tooltip = document.getElementById("globe-3d-tooltip");
+                    if (tooltip) tooltip.classList.add("hidden");
+                }, { passive: true });
+            }
+        });
 
         // Camera Initial Position
         this.graph.cameraPosition({ x: 0, y: 0, z: 280 });

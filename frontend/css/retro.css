@@ -1043,6 +1043,27 @@ body, html {
   margin-top: 6px;
 }
 
+/* --- 3D Floating Node Hover Card --- */
+.globe-3d-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 300;
+  transition: opacity 0.1s ease;
+  transform: translate(-50%, -125%);
+  background: rgba(15, 23, 42, 0.96);
+  border: 2px solid var(--encarta-teal);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 168, 150, 0.4);
+  border-radius: 4px;
+  padding: 8px 12px;
+  max-width: 270px;
+  opacity: 1;
+}
+
+.globe-3d-tooltip.hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
 /* --- MindMaze Streak Badge --- */
 .streak-badge {
   color: var(--retro-gold);
